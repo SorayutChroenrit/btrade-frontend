@@ -11,12 +11,16 @@ export default function Hero() {
             <span className="text-[#FDAB04] block mb-2">
               Master the Art of Bond Trading —
             </span>
-            <span className="block">Take Your Skills to New Heights</span>
+            <span className="text-blue-500 block">
+              Take Your Skills to New Heights
+            </span>
           </h1>
 
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-800 dark:text-gray-200 font-normal max-w-2xl">
-            Renew Your Knowledge, Elevate Your Profits! Learn Bond Trading Like
-            a Pro!
+          <p className="text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed max-w-2xl">
+            <span className="text-gray-700 dark:text-gray-300">
+              Renew Your Knowledge, Elevate Your Profits! Learn Bond Trading
+              Like a Pro!
+            </span>
           </p>
 
           <Button
