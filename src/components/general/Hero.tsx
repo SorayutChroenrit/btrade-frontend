@@ -17,7 +17,7 @@ export default function Hero() {
           </h1>
 
           <p className="text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed max-w-2xl">
-            <span className="text-gray-400">
+            <span className="text-slate-500">
               Renew Your Knowledge, Elevate Your Profits! Learn Bond Trading
               Like a Pro!
             </span>

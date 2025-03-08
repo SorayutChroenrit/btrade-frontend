@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { TanStackProviders } from "@/components/providers/TanStack-Provider";
 import Topbar from "@/components/general/Topbar";
 
 const geistSans = Geist({
@@ -28,8 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Topbar />
-        {children}
+        <TanStackProviders> {children}</TanStackProviders>
       </body>
     </html>
   );
