@@ -2,6 +2,7 @@
 import * as React from "react";
 import {
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -21,16 +22,25 @@ import {
   ClipboardList,
   Users,
   CheckCircle,
+  LogOut,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { Button } from "../ui/button";
+import { signOut } from "next-auth/react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // This is sample data.
 export const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   sidebarRoutes: [
     {
       title: "Learning",
@@ -104,8 +114,14 @@ const SidebarLogo = () => {
   );
 };
 
+// Removed the async keyword - this was likely causing issues
 export function SidebarRoutes() {
   const pathname = usePathname();
+  const [open, setOpen] = React.useState(false);
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/" });
+  };
 
   return (
     <>
@@ -113,10 +129,11 @@ export function SidebarRoutes() {
         <div className="flex items-center pt-3 px-3">
           <SidebarLogo />
         </div>
-        <NavUser user={data.user} />
+        <div className="px-3 py-2">
+          <NavUser />
+        </div>
       </SidebarHeader>
       <SidebarContent className="dark:bg-gray-900">
-        {/* We create a SidebarGroup for each parent. */}
         {data.sidebarRoutes.map((group) => (
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel className="dark:text-gray-400">
@@ -175,6 +192,37 @@ export function SidebarRoutes() {
         ))}
       </SidebarContent>
       <SidebarRail className="dark:bg-gray-900 dark:border-gray-800" />
+      <SidebarFooter className="p-3">
+        <AlertDialog open={open} onOpenChange={setOpen}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full flex items-center gap-2"
+            >
+              <LogOut size={16} /> Sign Out
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to sign out of your B-Trade account?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  handleSignOut();
+                  setOpen(false);
+                }}
+              >
+                Sign Out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </SidebarFooter>
     </>
   );
 }

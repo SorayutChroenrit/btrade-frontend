@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Clock, ArrowRight } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  ArrowRight,
+  CheckCircle,
+} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import {
   Card,
@@ -52,7 +59,8 @@ const mockCourses: Course[] = [
     },
     courseDate: "2025-05-15T09:00:00Z",
     location: "Bangkok",
-    imageUrl: "/placeholder.svg",
+    imageUrl:
+      "https://firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png",
     courseTag: ["New Course", "Web Development"],
     isPublished: true,
     currentEnrollment: 15,
@@ -71,7 +79,8 @@ const mockCourses: Course[] = [
     },
     courseDate: "2025-04-10T09:00:00Z",
     location: "Online",
-    imageUrl: "/placeholder.svg",
+    imageUrl:
+      "https://firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png",
     courseTag: ["Recently Updated", "React"],
     isPublished: true,
     currentEnrollment: 25,
@@ -88,7 +97,8 @@ const mockCourses: Course[] = [
     },
     courseDate: "2025-06-01T09:00:00Z",
     location: "Chiang Mai",
-    imageUrl: "/placeholder.svg",
+    imageUrl:
+      "https://firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png",
     courseTag: ["Design", "UX/UI"],
     isPublished: true,
     currentEnrollment: 10,
@@ -105,7 +115,8 @@ const mockCourses: Course[] = [
     },
     courseDate: "2025-03-15T09:00:00Z",
     location: "Bangkok",
-    imageUrl: "/placeholder.svg",
+    imageUrl:
+      "https://firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png",
     courseTag: ["Bootcamp", "Full Stack"],
     isPublished: true,
     currentEnrollment: 30,
@@ -496,8 +507,5 @@ const CourseCard: React.FC<CourseCardProps> = ({ activeTags = [] }) => {
     </TooltipProvider>
   );
 };
-
-// Needed for the CheckCircle icon referenced above
-import { CheckCircle } from "lucide-react";
 
 export default CourseCard;
