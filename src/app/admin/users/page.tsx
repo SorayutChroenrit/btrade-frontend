@@ -33,7 +33,7 @@ async function getData(): Promise<Payment[]> {
   ];
 }
 
-export default async function DashboardPage() {
+export default async function AdminUsersPage() {
   const data = await getData();
 
   return (
