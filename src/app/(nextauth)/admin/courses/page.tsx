@@ -1,4 +1,5 @@
 import { columns, Payment } from "@/components/course/CourseColumns";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Separator } from "@/components/ui/separator";
 

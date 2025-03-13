@@ -3,9 +3,8 @@ import { useState } from "react";
 import { Toaster, toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { getSession, signIn } from "next-auth/react";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,61 +43,42 @@ export function SignInForm({
     },
   });
 
-  const signInMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
-      // Send request to your backend API for sign-in
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/login`,
-        {
-          email: data.email,
-          password: data.password,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response.data;
-    },
-    onSuccess: async (data) => {
-      toast.success("Login successful!");
-      form.reset();
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      router.push("/dashboard");
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Login failed. Please check your credentials.";
-      // Handle specific field errors if returned by the backend
-      if (error.response?.data?.code === "Error-02-0003") {
-        form.setError("email", {
-          type: "manual",
-          message: error.response.data.message,
-        });
-      }
-
-      if (error.response?.data?.code === "Error-02-0004") {
-        form.setError("password", {
-          type: "manual",
-          message: error.response.data.message,
-        });
-      }
-
-      toast.error(errorMessage);
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    },
-  });
-
   // Form submission handler
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    signInMutation.mutate(values);
-  }
 
+    try {
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        // Your existing error handling...
+        toast.error(result.error || "Login failed");
+      } else {
+        toast.success("Login successful!");
+        form.reset();
+
+        // Fetch the session to get user data including role
+        const session = await getSession();
+        console.log(session?.user);
+        // Redirect based on user role
+        if (session?.user?.role === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/my-courses");
+        }
+
+        router.refresh();
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden py-0">
