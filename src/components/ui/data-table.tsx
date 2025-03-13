@@ -55,7 +55,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 justify-between">
         <Input
           placeholder="Filter emails..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
@@ -64,6 +64,7 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+        <Button variant={"hero"}>Create Courses</Button>
       </div>
       <div className="rounded-md border">
         <Table>
