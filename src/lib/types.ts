@@ -4,19 +4,22 @@ export interface ApplicationPeriod {
   endDate: string;
 }
 
-export interface Course {
-  courseId: string;
+export interface CourseData {
+  id: string;
   courseName: string;
-  price: string;
+  courseCode: string;
   description: string;
-  applicationPeriod: ApplicationPeriod;
-  courseDate: string;
+  startDate: any;
+  endDate: any;
+  courseDate: any;
+  courseTags: string[];
   location: string;
+  price: number;
+  hours: number;
+  maxSeats: number;
+  availableSeats: number;
   imageUrl?: string;
-  courseTag: string | string[];
-  isPublished: boolean;
-  currentEnrollment: number;
-  enrollmentLimit: number;
+  isPublished?: boolean;
 }
 
 declare module "next-auth" {

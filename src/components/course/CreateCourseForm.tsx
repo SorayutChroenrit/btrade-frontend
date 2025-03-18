@@ -63,15 +63,9 @@ type CourseFormData = z.infer<typeof courseSchema>;
 interface CourseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialData?: any;
 }
 
-export function CourseForm({
-  open,
-  onOpenChange,
-  initialData,
-}: CourseFormProps) {
-  const isEditing = !!initialData;
+export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
   const queryClient = useQueryClient();
   const [showTagPopover, setShowTagPopover] = useState(false);
 
@@ -87,27 +81,10 @@ export function CourseForm({
     { value: "other", label: "Other" },
   ];
 
-  // Convert string dates to Date objects for editing
-  const prepareInitialData = () => {
-    if (!initialData) return null;
-
-    return {
-      ...initialData,
-      startDate: initialData.startDate
-        ? new Date(initialData.startDate)
-        : new Date(),
-      endDate: initialData.endDate ? new Date(initialData.endDate) : new Date(),
-      courseDate: initialData.courseDate
-        ? new Date(initialData.courseDate)
-        : new Date(),
-      courseTags: initialData.courseTags || [],
-    };
-  };
-
-  // Initialize form with default values or editing data
+  // Initialize form with default values
   const form = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
-    defaultValues: prepareInitialData() || {
+    defaultValues: {
       courseName: "",
       courseCode: "",
       description: "",
@@ -123,7 +100,7 @@ export function CourseForm({
     },
   });
 
-  // Create mutation for adding/editing course
+  // Create mutation for adding course
   const mutation = useMutation({
     mutationFn: async (data: CourseFormData) => {
       // Format dates for API
@@ -132,21 +109,11 @@ export function CourseForm({
         startDate: format(data.startDate, "yyyy-MM-dd"),
         endDate: format(data.endDate, "yyyy-MM-dd"),
         courseDate: format(data.courseDate, "yyyy-MM-dd"),
+        // Set available seats to maxSeats for new courses
+        availableSeats: data.maxSeats,
       };
 
-      if (isEditing) {
-        return axios.put(
-          `http://localhost:20000/api/v1/courses/${initialData._id}`,
-          formattedData
-        );
-      } else {
-        // Set available seats to maxSeats for new courses
-        formattedData.availableSeats = formattedData.maxSeats;
-        return axios.post(
-          "http://localhost:20000/api/v1/courses",
-          formattedData
-        );
-      }
+      return axios.post("http://localhost:20000/api/v1/courses", formattedData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
@@ -154,33 +121,22 @@ export function CourseForm({
       form.reset();
     },
     onError: (error) => {
-      console.error("Error creating/updating course:", error);
+      console.error("Error creating course:", error);
       // You can add error handling here, such as displaying an error message
     },
   });
 
   const onSubmit = (data: CourseFormData) => {
-    // When submitting, we need to handle the availableSeats field
-    // For new courses, availableSeats equals maxSeats
-    const submitData = {
-      ...data,
-      availableSeats: isEditing ? initialData.availableSeats : data.maxSeats,
-    };
-
-    mutation.mutate(submitData);
+    mutation.mutate(data);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Edit Course" : "Create New Course"}
-          </DialogTitle>
+          <DialogTitle>Create New Course</DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "Update the course details below."
-              : "Fill in the details to create a new course."}
+            Fill in the details to create a new course.
           </DialogDescription>
         </DialogHeader>
 
@@ -543,11 +499,7 @@ export function CourseForm({
                 variant={"hero"}
                 disabled={mutation.isPending}
               >
-                {mutation.isPending
-                  ? "Saving..."
-                  : isEditing
-                  ? "Update Course"
-                  : "Create Course"}
+                {mutation.isPending ? "Creating..." : "Create Course"}
               </Button>
             </DialogFooter>
           </form>

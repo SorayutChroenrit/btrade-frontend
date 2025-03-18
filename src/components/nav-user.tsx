@@ -27,8 +27,6 @@ export function NavUser() {
     )}`;
   };
 
-  console.log(user?.traderInfo.name);
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
