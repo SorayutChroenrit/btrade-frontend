@@ -25,6 +25,7 @@ const loaderVariants = cva("animate-spin", {
     color: {
       white: "text-white",
       primary: "text-primary",
+      hero: "text-[#FDAB04]",
     },
   },
   defaultVariants: {
