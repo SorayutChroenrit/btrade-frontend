@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 
@@ -16,7 +16,6 @@ const handler = NextAuth({
         }
 
         try {
-          // Call backend
           const response = await axios.post(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/login`,
             {
@@ -31,19 +30,17 @@ const handler = NextAuth({
           );
 
           const userData = response.data.data;
-
+          console.log(userData);
           if (userData && userData.token) {
-            // Return the user object with token
             return {
               id: userData.userId,
               email: userData.email,
-              name: userData.name,
               role: userData.role,
-              token: userData.token,
               traderId: userData.traderId,
+              traderInfo: userData.traderInfo,
+              accessToken: userData.token,
             };
           }
-
           return null;
         } catch (error) {
           console.error("Auth error:", error);
@@ -54,26 +51,24 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // Add custom user data to token
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.name = user.name;
         token.role = user.role;
-        token.accessToken = user.token;
+        token.accessToken = user.accessToken;
         token.traderId = user.traderId;
+        token.traderInfo = user.traderInfo;
       }
       return token;
     },
     async session({ session, token }) {
-      // Add custom token data to session
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
-        session.user.name = token.name as string;
         session.user.role = token.role as string;
         session.user.accessToken = token.accessToken as string;
         session.user.traderId = token.traderId as string;
+        session.user.traderInfo = token.traderInfo;
       }
       return session;
     },

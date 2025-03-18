@@ -1,50 +1,23 @@
-import CourseHeader from "@/components/course/DashboardHeader";
-import { DataTable } from "@/components/ui/data-table";
-import { columns, Payment } from "@/components/user/CourseColumns";
-async function getData(): Promise<Payment[]> {
-  // Fetch data from your API here.
-  return [
-    {
-      id: "728ed52f",
-      amount: 100,
-      status: "pending",
-      email: "m@example.com",
-    },
-    {
-      id: "728ed52f",
-      amount: 100,
-      status: "pending",
-      email: "m@example.com",
-    },
-    {
-      id: "728ed52f",
-      amount: 100,
-      status: "pending",
-      email: "m@example.com",
-    },
-    {
-      id: "728ed52f",
-      amount: 100,
-      status: "pending",
-      email: "masdas@example.com",
-    },
+import { Separator } from "@/components/ui/separator";
+import AdminUsers from "@/components/user/UserManagement";
 
-    // ...
-  ];
-}
-
-export default async function AdminUsersPage() {
-  const data = await getData();
-
+export default function AdminUsersPage() {
   return (
     <div className="container mx-auto px-6 py-6">
-      <CourseHeader />
-      <div className="flex flex-1 flex-col gap-4">
-        <div className="container mx-auto ">
-          <DataTable columns={columns} data={data} />
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4">
+          <div className="space-y-1">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Course Management
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Track your business metrics and performance
+            </p>
+          </div>
         </div>
-        <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+        <Separator className="my-2" />
       </div>
+      <AdminUsers />
     </div>
   );
 }

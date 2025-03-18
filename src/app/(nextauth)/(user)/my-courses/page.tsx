@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +33,6 @@ import {
 export default function MyCoursesPage() {
   const [filter, setFilter] = useState("all");
 
-  // Sample in-person course data with location and schedule information
   const courses = [
     {
       id: 1,
@@ -124,7 +122,6 @@ export default function MyCoursesPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">My Courses</h1>
-
         <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -166,7 +163,10 @@ export default function MyCoursesPage() {
         <TabsContent value="grid">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
-              <Card key={course.id} className="overflow-hidden flex flex-col">
+              <Card
+                key={course.id}
+                className="overflow-hidden flex flex-col pt-0 pb-8"
+              >
                 <div className="relative h-48 w-full overflow-hidden">
                   <img
                     src={course.image}
@@ -289,7 +289,7 @@ export default function MyCoursesPage() {
         <TabsContent value="list">
           <div className="space-y-4">
             {filteredCourses.map((course) => (
-              <Card key={course.id}>
+              <Card key={course.id} className="py-0">
                 <div className="flex flex-col md:flex-row">
                   <div className="md:w-48 h-32 md:h-auto overflow-hidden">
                     <img
@@ -311,21 +311,15 @@ export default function MyCoursesPage() {
                       <Badge
                         variant={
                           course.status === "completed"
-                            ? "success"
+                            ? "completed"
                             : course.status === "in-progress"
-                            ? "default"
+                            ? "in-progress"
                             : course.status === "upcoming"
-                            ? "secondary"
+                            ? "upcoming"
                             : "outline"
                         }
                       >
-                        {course.status === "completed"
-                          ? "Completed"
-                          : course.status === "in-progress"
-                          ? "In Progress"
-                          : course.status === "upcoming"
-                          ? "Upcoming"
-                          : "Not Started"}
+                        {course.status}
                       </Badge>
                     </div>
 

@@ -20,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "./button";
 import { Input } from "@/components/ui/input";
 import { DataTablePagination } from "../general/Pagination";
 
@@ -64,7 +63,6 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
-        <Button variant={"hero"}>Create Courses</Button>
       </div>
       <div className="rounded-md border">
         <Table>

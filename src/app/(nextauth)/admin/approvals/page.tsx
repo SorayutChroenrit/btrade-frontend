@@ -1,7 +1,7 @@
 import CourseHeader from "@/components/course/DashboardHeader";
 import { DataTable } from "@/components/ui/data-table";
-import { columns, Payment } from "@/components/user/CourseColumns";
-async function getData(): Promise<Payment[]> {
+import { User } from "@/components/user/UserColumns";
+async function getData(): Promise<User[]> {
   // Fetch data from your API here.
   return [
     {

@@ -12,10 +12,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 import { DataTableColumnHeader } from "../general/ColumnsHeader";
 
 // Define the Course type based on your MongoDB schema
-export type Course = {
+export type User = {
   _id: string;
   courseName: string;
   courseCode: string;
@@ -32,7 +33,7 @@ export type Course = {
   updatedAt: string;
 };
 
-export const columns: ColumnDef<Course>[] = [
+export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "courseName",
     header: ({ column }) => (

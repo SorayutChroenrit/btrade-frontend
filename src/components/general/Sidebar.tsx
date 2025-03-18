@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
-import { signOut } from "next-auth/react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +37,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ModeToggle } from "./ModeToggle";
+import { signOut } from "next-auth/react";
 
 // This is sample data.
 export const data = {
@@ -97,7 +98,7 @@ const SidebarLogo = () => {
       href="/"
       className="flex items-center gap-2 sm:gap-3 w-full transition-all duration-300"
     >
-      <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md shadow-md bg-white dark:bg-gray-800 flex-shrink-0 transition-all duration-300 flex items-center justify-center">
+      <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md shadow-md bg-white  flex-shrink-0 transition-all duration-300 flex items-center justify-center">
         <Image
           src="/logo.png"
           alt="B-TRADE Logo"
@@ -125,7 +126,7 @@ export function SidebarRoutes() {
 
   return (
     <>
-      <SidebarHeader className="dark:bg-gray-900">
+      <SidebarHeader>
         <div className="flex items-center pt-3 px-3">
           <SidebarLogo />
         </div>
@@ -133,12 +134,10 @@ export function SidebarRoutes() {
           <NavUser />
         </div>
       </SidebarHeader>
-      <SidebarContent className="dark:bg-gray-900">
+      <SidebarContent>
         {data.sidebarRoutes.map((group) => (
           <SidebarGroup key={group.title}>
-            <SidebarGroupLabel className="dark:text-gray-400">
-              {group.title}
-            </SidebarGroupLabel>
+            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
@@ -148,13 +147,7 @@ export function SidebarRoutes() {
                       {isActive && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FDAB04] dark:bg-[#FFB726] rounded-r-md" />
                       )}
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        className={`gap-2 dark:hover:bg-gray-800 ${
-                          isActive ? "bg-gray-100 dark:bg-gray-800" : ""
-                        }`}
-                      >
+                      <SidebarMenuButton asChild isActive={isActive}>
                         <Link
                           href={item.path || "#"}
                           className="flex items-center"
@@ -191,14 +184,12 @@ export function SidebarRoutes() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarRail className="dark:bg-gray-900 dark:border-gray-800" />
+      <SidebarRail />
       <SidebarFooter className="p-3">
+        <ModeToggle />
         <AlertDialog open={open} onOpenChange={setOpen}>
           <AlertDialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full flex items-center gap-2"
-            >
+            <Button variant="hero" className="w-full flex items-center gap-2">
               <LogOut size={16} /> Sign Out
             </Button>
           </AlertDialogTrigger>
@@ -216,6 +207,7 @@ export function SidebarRoutes() {
                   handleSignOut();
                   setOpen(false);
                 }}
+                className=""
               >
                 Sign Out
               </AlertDialogAction>

@@ -1,15 +1,21 @@
+import { ThemeProvider } from "@/components/providers/Theme-Provider";
 import { AuthProvider } from "@/providers/auth-provider";
 
-export default function RootLayout({
+export default function UserLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
+    <div>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
         <AuthProvider>{children}</AuthProvider>
-      </body>
-    </html>
+      </ThemeProvider>
+    </div>
   );
 }

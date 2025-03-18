@@ -24,8 +24,7 @@ export default function SignUpPage() {
 
       <div className="relative hidden bg-muted lg:block">
         <img
-          // src="/placeholder.svg"
-          src="https://firstbenefits.org/wp-content/uploads/2017/10/placeholder-1024x1024.png"
+          src="/placeholder.svg"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />

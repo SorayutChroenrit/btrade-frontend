@@ -89,7 +89,7 @@ const SidebarLogo = () => {
       href="/"
       className="flex items-center gap-2 sm:gap-3 w-full transition-all duration-300"
     >
-      <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md shadow-md bg-white dark:bg-gray-800 flex-shrink-0 transition-all duration-300 flex items-center justify-center">
+      <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md shadow-md bg-white  flex-shrink-0 transition-all duration-300 flex items-center justify-center">
         <Image
           src="/logo.png"
           alt="B-TRADE Logo"
