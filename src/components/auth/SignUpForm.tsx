@@ -74,7 +74,7 @@ export function SignUpForm({
         {
           name: data.fullname,
           email: data.email,
-          idcard: data.idcard,
+          idCard: data.idcard,
           company: data.company,
           phonenumber: data.phonenumber,
           password: data.password,

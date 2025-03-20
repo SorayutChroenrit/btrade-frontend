@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -132,7 +131,7 @@ export default function ForgetPassword({
                   >
                     {isSubmitting ? (
                       <>
-                        <Spinner size="small" />
+                        <Spinner size="large" color={"hero"} />
                         <span>Sending...</span>
                       </>
                     ) : (
