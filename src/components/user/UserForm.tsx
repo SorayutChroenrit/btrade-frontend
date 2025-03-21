@@ -132,14 +132,14 @@ export function UserForm({ open, onOpenChange, initialData }: UserFormProps) {
 
       if (isEditing) {
         return axios.put(
-          `http://localhost:20000/api/v1/courses/${initialData._id}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${initialData._id}`,
           formattedData
         );
       } else {
         // Set available seats to maxSeats for new courses
         formattedData.availableSeats = formattedData.maxSeats;
         return axios.post(
-          "http://localhost:20000/api/v1/courses",
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses`,
           formattedData
         );
       }

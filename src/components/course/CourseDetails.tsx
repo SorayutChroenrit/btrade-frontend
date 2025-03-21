@@ -132,7 +132,7 @@ export default function CourseDetail() {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:20000/api/v1/courses/${courseId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`
         );
 
         const result = response.data;
@@ -208,7 +208,9 @@ export default function CourseDetail() {
       )
     ) {
       try {
-        await axios.delete(`http://localhost:20000/api/v1/courses/${courseId}`);
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}api/v1/courses/${courseId}`
+        );
         router.push("/admin/courses");
       } catch (err) {
         console.error("Failed to delete course:", err);
@@ -240,7 +242,7 @@ export default function CourseDetail() {
 
       // Make a call to your backend API to verify the ID card
       const response = await axios.post(
-        `http://localhost:20000/api/v1/verify-id`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/verify-id`,
         {
           userId: session?.user?.id,
           idCard: values.idCard,
@@ -260,7 +262,7 @@ export default function CourseDetail() {
 
         // Create checkout session
         const checkoutResponse = await axios.post(
-          `http://localhost:20000/api/v1/create-checkout-session`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/create-checkout-session`,
           {
             stripePriceId: course.stripePriceId,
             metadata: {

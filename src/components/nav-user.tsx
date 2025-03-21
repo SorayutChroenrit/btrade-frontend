@@ -10,9 +10,9 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
+import axios from "axios";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,17 +41,45 @@ import {
 import { useSession, signOut } from "next-auth/react";
 import { Skeleton } from "./ui/skeleton";
 import { useTheme } from "next-themes";
+import { Toaster, toast } from "sonner";
+import { AccountDialog } from "./user/AccountDialog";
+
+// Define TypeScript interfaces for trader info and update form values
+interface TraderInfo {
+  _id: string;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  company?: string;
+  idCard?: string;
+  image?: string;
+}
+
+interface AccountUpdateValues {
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  company?: string;
+  idCard?: string;
+}
+
+// Define session user type with traderInfo
+interface SessionUser {
+  traderId: string;
+  traderInfo?: TraderInfo;
+}
 
 export function NavUser() {
   const { data: session, status } = useSession();
-  const user = session?.user;
+  const user = session?.user as SessionUser | undefined;
   const isLoading = status === "loading";
   const { isMobile } = useSidebar();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined): string => {
     if (!name) return "U";
 
     const nameParts = name.split(" ");
@@ -68,8 +96,44 @@ export function NavUser() {
     await signOut({ callbackUrl: "/" });
   };
 
+  // Updated function to include traderId from the session
+  const handleUpdateAccount = async (values: AccountUpdateValues) => {
+    try {
+      // Check if traderInfo exists and has _id (not id)
+      if (!user?.traderInfo?._id) {
+        toast.error("Trader ID not found in session");
+        return;
+      }
+
+      // Include the traderId in the request payload
+      const requestData = {
+        traderId: user.traderInfo._id,
+        ...values,
+      };
+
+      console.log(requestData);
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/update-profile`,
+        requestData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      toast.success("Your profile has been updated successfully.");
+      return response.data;
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile. Please try again.");
+      throw error;
+    }
+  };
+
   return (
     <div className="mt-auto">
+      <Toaster position="bottom-right" richColors />
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
@@ -139,7 +203,7 @@ export function NavUser() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setShowAccountDialog(true)}>
                   <BadgeCheck className="mr-2 h-4 w-4" />
                   Account
                 </DropdownMenuItem>
@@ -163,6 +227,8 @@ export function NavUser() {
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
+
+      {/* Logout Dialog */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -182,6 +248,16 @@ export function NavUser() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Account Dialog */}
+      {user?.traderInfo && (
+        <AccountDialog
+          traderId={user.traderId}
+          open={showAccountDialog}
+          onOpenChange={setShowAccountDialog}
+          onUpdate={handleUpdateAccount}
+        />
+      )}
     </div>
   );
 }

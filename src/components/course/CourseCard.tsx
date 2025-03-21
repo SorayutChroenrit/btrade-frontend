@@ -46,7 +46,7 @@ const CourseCard = () => {
     const fetchCourses = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:20000/api/v1/courses"
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses`
         );
 
         if (

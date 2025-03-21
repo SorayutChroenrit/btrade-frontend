@@ -113,7 +113,7 @@ export function EditCourseForm({
     queryFn: async () => {
       if (!courseId) return null;
       const response = await axios.get(
-        `http://localhost:20000/api/v1/courses/${courseId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`
       );
       console.log("API Response:", response.data);
       return response.data;
@@ -204,7 +204,7 @@ export function EditCourseForm({
       });
 
       return axios.put(
-        `http://localhost:20000/api/v1/courses/${courseId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`,
         formattedData
       );
     },

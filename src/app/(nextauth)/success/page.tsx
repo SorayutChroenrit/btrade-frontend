@@ -28,7 +28,7 @@ const SuccessPage = () => {
 
         // Step 1: Get session data from checkout
         const sessionResponse = await axios.get(
-          `http://localhost:20000/api/v1/checkout-session/${sessionId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/checkout-session/${sessionId}`
         );
 
         const sessionData = sessionResponse.data.data;
@@ -52,7 +52,7 @@ const SuccessPage = () => {
 
         // Step 2: Register for the course
         const registerResponse = await axios.post(
-          `http://localhost:20000/api/v1/registerCourse`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/registerCourse`,
           { userId, courseId },
           {
             headers: {
@@ -74,7 +74,7 @@ const SuccessPage = () => {
           // If course name isn't directly available, fetch the course details
           try {
             const courseResponse = await axios.get(
-              `http://localhost:20000/api/v1/courses/${courseId}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`,
               {
                 // headers: {
                 //   Authorization: token ? `Bearer ${token}` : undefined,
