@@ -16,9 +16,13 @@ const fetchPendingEnrollments = async () => {
     );
     const enrollments = enrollmentsResponse.data.data;
 
-    // Extract unique course IDs and trader IDs
-    const courseIds = [...new Set(enrollments.map((item) => item.courseId))];
-    const traderIds = [...new Set(enrollments.map((item) => item.traderId))];
+    // Extract unique course IDs and trader IDs (filter out undefined values)
+    const courseIds = [
+      ...new Set(enrollments.map((item) => item.courseId).filter(Boolean)),
+    ];
+    const traderIds = [
+      ...new Set(enrollments.map((item) => item.traderId).filter(Boolean)),
+    ];
 
     // Fetch course details
     const coursesResponse = await Promise.all(
@@ -28,7 +32,7 @@ const fetchPendingEnrollments = async () => {
     );
     const courses = coursesResponse.map((res) => res.data.data);
 
-    // Fetch trader details
+    // Fetch trader details only for valid trader IDs
     const tradersResponse = await Promise.all(
       traderIds.map((id) =>
         axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${id}`)
@@ -42,10 +46,13 @@ const fetchPendingEnrollments = async () => {
     const enrichedEnrollments = enrollments.map((enrollment) => {
       const course = courses.find((c) => c._id === enrollment.courseId);
 
-      // Find the trader by matching userId or _id with the traderId
-      const trader = traders.find(
-        (t) => t.userId === enrollment.traderId || t._id === enrollment.traderId
-      );
+      // Handle the case where traderId might be undefined
+      const trader = enrollment.traderId
+        ? traders.find(
+            (t) =>
+              t.userId === enrollment.traderId || t._id === enrollment.traderId
+          )
+        : null;
 
       return {
         ...enrollment,

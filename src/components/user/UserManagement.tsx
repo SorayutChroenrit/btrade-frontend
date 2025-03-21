@@ -170,7 +170,7 @@ export default function AdminUsers() {
     },
   };
 
-  // Replace the existing actions column with our custom one
+  // Replace the existing actions column with this one
   const columnsWithEdit = baseColumns.filter((col) => col.id !== "actions");
   columnsWithEdit.push(actionsColumn);
 
