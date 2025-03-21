@@ -63,6 +63,7 @@ export interface StatusHistoryItem {
 }
 
 export interface UserData {
+  _id?: Object;
   id?: string;
   email: string;
   password: string;

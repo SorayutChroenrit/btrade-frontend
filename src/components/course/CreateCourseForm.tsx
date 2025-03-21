@@ -91,9 +91,14 @@ type CourseFormData = z.infer<typeof courseSchema>;
 interface CourseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
-export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
+export function CreateCourseForm({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CourseFormProps) {
   const { data: session } = useSession();
   const user = session?.user;
   const queryClient = useQueryClient();
@@ -177,6 +182,7 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       onOpenChange(false);
       form.reset();
+      onSuccess();
     },
     onError: (error) => {
       console.error("Error creating course:", error);

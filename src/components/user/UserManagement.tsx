@@ -20,11 +20,10 @@ import { CreateUserDialog } from "./CreateUserForm";
 import { ViewUserTrainingDialog } from "./ViewUserDialog";
 import { EditUserDialog } from "./EditUserDialog";
 
-// Interface definitions
 interface UserData {
   _id: string;
   email: string;
-  role: string;
+  role: "admin" | "user";
   status: string;
   statusReason?: string;
   lastStatusUpdate?: Date;

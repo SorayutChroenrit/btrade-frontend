@@ -43,7 +43,7 @@ import { Separator } from "@/components/ui/separator";
 interface UserData {
   _id: string;
   email: string;
-  role: "admin" | "user" | "instructor" | "student" | "manager";
+  role: string;
   status: "Active" | "Suspended" | "Locked" | "inactive";
   statusReason?: string;
   lastStatusUpdate?: Date;
