@@ -21,7 +21,9 @@ const fetchPendingEnrollments = async () => {
       ...new Set(enrollments.map((item) => item.courseId).filter(Boolean)),
     ];
     const traderIds = [
-      ...new Set(enrollments.map((item) => item.traderId).filter(Boolean)),
+      ...new Set(
+        enrollments.map((item) => item.traderId || item.userId).filter(Boolean)
+      ),
     ];
 
     // Fetch course details
@@ -46,13 +48,13 @@ const fetchPendingEnrollments = async () => {
     const enrichedEnrollments = enrollments.map((enrollment) => {
       const course = courses.find((c) => c._id === enrollment.courseId);
 
-      // Handle the case where traderId might be undefined
-      const trader = enrollment.traderId
-        ? traders.find(
-            (t) =>
-              t.userId === enrollment.traderId || t._id === enrollment.traderId
-          )
-        : null;
+      const trader = traders.find(
+        (t) =>
+          t._id === enrollment.traderId ||
+          t._id === enrollment.userId ||
+          t.userId === enrollment.traderId ||
+          t.userId === enrollment.userId
+      );
 
       return {
         ...enrollment,
