@@ -238,7 +238,7 @@ export function SignUpForm({
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
                     <Input
-                      id="phone"
+                      id="phonenumber"
                       placeholder="+66 (555) 123-4567"
                       type="text"
                       required
@@ -298,6 +298,7 @@ export function SignUpForm({
           </div>
 
           <Button
+            id="submitbutton"
             type="submit"
             className="w-full mt-2 flex items-center justify-center gap-2"
             variant="hero"

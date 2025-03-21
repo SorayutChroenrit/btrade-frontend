@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import axios from "axios";
+import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -31,32 +32,59 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, X } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, UploadCloud, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "../ui/label";
+import { DateTimePicker24h } from "../ui/24datetimepicker";
+import { Toaster, toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { Spinner } from "../ui/spinner";
 
-// Define the validation schema
-const courseSchema = z.object({
-  courseName: z.string().min(3, "Course name must be at least 3 characters"),
-  courseCode: z.string().min(2, "Course code is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  startDate: z.date({
-    required_error: "Start date is required",
-  }),
-  endDate: z.date({
-    required_error: "End date is required",
-  }),
-  courseDate: z.date({
-    required_error: "Course date is required",
-  }),
-  courseTags: z.array(z.string()).min(1, "Select at least one course tag"),
-  location: z.string().optional(),
-  price: z.number().positive("Price must be a positive number"),
-  hours: z.number().positive("Hours must be a positive number"),
-  maxSeats: z.number().positive("Max seats must be a positive number"),
-  imageUrl: z.string().url("Image URL must be a valid URL").optional(),
-});
+// Define the validation schema with refined date validation
+const courseSchema = z
+  .object({
+    courseName: z.string().min(3, "Course name must be at least 3 characters"),
+    courseCode: z.string().min(2, "Course code is required"),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters"),
+    startDate: z.date({
+      required_error: "Start date is required",
+    }),
+    endDate: z.date({
+      required_error: "End date is required",
+    }),
+    courseDate: z.date({
+      required_error: "Course date is required",
+    }),
+    courseTags: z.array(z.string()).min(1, "Select at least one course tag"),
+    location: z.string(),
+    price: z.number().positive("Price must be a positive number"),
+    hours: z.number().positive("Hours must be a positive number"),
+    maxSeats: z.number().positive("Max seats must be a positive number"),
+    courseImage: z.instanceof(File),
+  })
+  .refine(
+    (data) => {
+      // Ensure endDate is after startDate
+      return data.endDate >= data.startDate;
+    },
+    {
+      message: "End date must be after or equal to start date",
+      path: ["endDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Ensure courseDate is after endDate
+      return data.courseDate > data.endDate;
+    },
+    {
+      message: "Course date must be after end date",
+      path: ["courseDate"],
+    }
+  );
 
 type CourseFormData = z.infer<typeof courseSchema>;
 
@@ -66,68 +94,112 @@ interface CourseFormProps {
 }
 
 export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
   const [showTagPopover, setShowTagPopover] = useState(false);
-
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const tomorrow = addDays(new Date(), 1);
   // Course tag options
   const courseTags = [
-    { value: "programming", label: "Programming" },
-    { value: "design", label: "Design" },
-    { value: "business", label: "Business" },
-    { value: "marketing", label: "Marketing" },
-    { value: "science", label: "Science" },
-    { value: "language", label: "Language" },
-    { value: "math", label: "Mathematics" },
-    { value: "other", label: "Other" },
+    { value: "newcourse", label: "NewCourse" },
+    { value: "recentlyupdated", label: "RecentlyUpdated" },
+    { value: "comingsoon", label: "ComingSoon" },
   ];
 
-  // Initialize form with default values
   const form = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
       courseName: "",
       courseCode: "",
       description: "",
-      startDate: new Date(),
-      endDate: new Date(),
+      startDate: tomorrow,
+      endDate: new Date(new Date().setDate(new Date().getDate() + 30)), // Default to 30 days from now
       courseDate: new Date(),
       courseTags: [],
       location: "",
       price: 0,
       hours: 0,
       maxSeats: 0,
-      imageUrl: "",
+      courseImage: undefined,
     },
+    mode: "onChange",
   });
+
+  // Get form values for validation
+  const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
+  const courseDate = form.watch("courseDate");
+
+  const isDateAfterEndDate = courseDate > endDate;
 
   // Create mutation for adding course
   const mutation = useMutation({
     mutationFn: async (data: CourseFormData) => {
-      // Format dates for API
-      const formattedData = {
-        ...data,
-        startDate: format(data.startDate, "yyyy-MM-dd"),
-        endDate: format(data.endDate, "yyyy-MM-dd"),
-        courseDate: format(data.courseDate, "yyyy-MM-dd"),
-        // Set available seats to maxSeats for new courses
-        availableSeats: data.maxSeats,
-      };
+      // Create a FormData object instead of JSON
+      const formData = new FormData();
 
-      return axios.post("http://localhost:20000/api/v1/courses", formattedData);
+      // Format dates for API
+      const formattedStartDate = format(data.startDate, "yyyy-MM-dd");
+      const formattedEndDate = format(data.endDate, "yyyy-MM-dd");
+      const formattedCourseDate = format(data.courseDate, "yyyy-MM-dd");
+
+      // Add all your form fields to FormData
+      formData.append("courseName", data.courseName);
+      formData.append("courseCode", data.courseCode);
+      formData.append("description", data.description);
+      formData.append("startDate", formattedStartDate);
+      formData.append("endDate", formattedEndDate);
+      formData.append("courseDate", formattedCourseDate);
+      formData.append("location", data.location);
+      formData.append("courseTags", JSON.stringify(data.courseTags));
+      formData.append("maxSeats", data.maxSeats.toString());
+      formData.append("availableSeats", data.maxSeats.toString());
+      formData.append("price", data.price.toString());
+      formData.append("hours", data.hours.toString());
+      formData.append("courseImage", data.courseImage);
+
+      return axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
+      toast.success("Course created successfully!");
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       onOpenChange(false);
       form.reset();
     },
     onError: (error) => {
       console.error("Error creating course:", error);
-      // You can add error handling here, such as displaying an error message
+      if (axios.isAxiosError(error) && error.response) {
+        toast.error(
+          `Error: ${error.response.data.message || "Something went wrong"}`
+        );
+      } else {
+        toast.error("Failed to create course");
+      }
     },
   });
 
   const onSubmit = (data: CourseFormData) => {
     mutation.mutate(data);
+  };
+
+  // Update course date when start/end dates change
+  const updateCourseDateIfNeeded = () => {
+    const currentCourseDate = form.getValues("courseDate");
+    if (currentCourseDate <= endDate) {
+      form.setValue("courseDate", addDays(endDate, 1));
+    }
   };
 
   return (
@@ -220,8 +292,13 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
                         <Calendar
                           mode="single"
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            // Update after change
+                            setTimeout(updateCourseDateIfNeeded, 0);
+                          }}
                           initialFocus
+                          disabled={(date) => date < tomorrow}
                         />
                       </PopoverContent>
                     </Popover>
@@ -256,8 +333,13 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
                         <Calendar
                           mode="single"
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            // Update after change
+                            setTimeout(updateCourseDateIfNeeded, 0);
+                          }}
                           initialFocus
+                          disabled={(date) => date < startDate}
                         />
                       </PopoverContent>
                     </Popover>
@@ -274,31 +356,12 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Course Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className="w-full pl-3 text-left font-normal"
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DateTimePicker24h
+                      selectedDate={field.value}
+                      onChange={field.onChange}
+                      minDate={startDate}
+                      maxDate={endDate}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -416,9 +479,12 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
                         type="number"
                         placeholder="499.99"
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(parseFloat(e.target.value))
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(
+                            value === "" ? "" : parseInt(value, 10) || 0
+                          );
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -437,16 +503,18 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
                         type="number"
                         placeholder="40"
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value))
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(
+                            value === "" ? "" : parseInt(value, 10) || 0
+                          );
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="maxSeats"
@@ -458,9 +526,12 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
                         type="number"
                         placeholder="30"
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value))
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(
+                            value === "" ? "" : parseInt(value, 10) || 0
+                          );
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -471,21 +542,96 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
 
             <FormField
               control={form.control}
-              name="imageUrl"
+              name="courseImage"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL</FormLabel>
+                  <FormLabel>Course Image</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="https://example.com/course-image.jpg"
-                      {...field}
-                    />
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 w-full">
+                        {/* Upload area - 50% width */}
+                        <Label
+                          htmlFor="course-image"
+                          className="cursor-pointer w-1/2"
+                        >
+                          <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-gray-400 transition-colors">
+                            <UploadCloud className="h-8 w-8 text-gray-500 mb-2" />
+                            <span className="text-sm text-gray-500">
+                              {field.value ? "Change image" : "Upload image"}
+                            </span>
+                          </div>
+                          <Input
+                            id="course-image"
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                // Store the file object for form submission
+                                field.onChange(file);
+
+                                // Create preview URL
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                  setImagePreview(e.target?.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </Label>
+
+                        {/* Preview area - 50% width, always visible but conditionally shows content */}
+                        <div className="w-1/2 h-32">
+                          {imagePreview || field.value ? (
+                            <div className="relative h-full w-full rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={
+                                  imagePreview ||
+                                  (field.value instanceof File
+                                    ? URL.createObjectURL(field.value)
+                                    : undefined)
+                                }
+                                alt="Course preview"
+                                className="h-full w-full object-cover"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                onClick={() => {
+                                  field.onChange(null);
+                                  setImagePreview(null);
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center h-full w-full rounded-lg border border-dashed border-gray-200">
+                              <span className="text-sm text-gray-400">
+                                Preview will appear here
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {field.value && (
+                        <p className="text-sm text-gray-500">
+                          {field.value instanceof File
+                            ? field.value.name
+                            : "Image selected"}
+                        </p>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <DialogFooter>
               <Button
                 type="button"
@@ -497,14 +643,22 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
               <Button
                 type="submit"
                 variant={"hero"}
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || !isDateAfterEndDate}
               >
-                {mutation.isPending ? "Creating..." : "Create Course"}
+                {mutation.isPending ? (
+                  <>
+                    <Spinner size="normal" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Course"
+                )}
               </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
+      <Toaster position="bottom-right" richColors />
     </Dialog>
   );
 }

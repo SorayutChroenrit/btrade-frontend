@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { DataTableColumnHeader } from "../general/ColumnsHeader";
+import dayjs from "dayjs";
 
 // Define the Course type based on your MongoDB schema
 export type Course = {
@@ -34,10 +35,11 @@ export type Course = {
 
 export const columns: ColumnDef<Course>[] = [
   {
-    accessorKey: "courseName",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Course Name" />
-    ),
+    id: "rowNumber",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="#" />,
+    cell: ({ row }) => {
+      return row.index + 1;
+    },
   },
   {
     accessorKey: "courseCode",
@@ -45,22 +47,12 @@ export const columns: ColumnDef<Course>[] = [
       <DataTableColumnHeader column={column} title="Code" />
     ),
   },
-  // {
-  //   accessorKey: "startDate",
-  //   header: "Start Date",
-  //   cell: ({ row }) => {
-  //     const date = new Date(row.getValue("startDate"));
-  //     return format(date, "MMM d, yyyy");
-  //   },
-  // },
-  // {
-  //   accessorKey: "endDate",
-  //   header: "End Date",
-  //   cell: ({ row }) => {
-  //     const date = new Date(row.getValue("endDate"));
-  //     return format(date, "MMM d, yyyy");
-  //   },
-  // },
+  {
+    accessorKey: "courseName",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Course Name" />
+    ),
+  },
   {
     accessorKey: "price",
     header: ({ column }) => (
@@ -104,6 +96,22 @@ export const columns: ColumnDef<Course>[] = [
     },
   },
   {
+    accessorKey: "isPublished",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Publish" />
+    ),
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Created At" />
+    ),
+    cell: ({ row }) => {
+      const date = row.getValue("createdAt") as string | Date;
+      return dayjs(date).format("HH:mm, D MMMM YYYY ");
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const course = row.original;
@@ -118,11 +126,6 @@ export const columns: ColumnDef<Course>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(course._id)}
-            >
-              Copy ID
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>View Details</DropdownMenuItem>
             <DropdownMenuItem>Edit Course</DropdownMenuItem>

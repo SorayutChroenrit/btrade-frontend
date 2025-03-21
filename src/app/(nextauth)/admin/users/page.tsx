@@ -8,10 +8,10 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4">
           <div className="space-y-1">
             <h2 className="text-3xl font-bold tracking-tight">
-              Course Management
+              User Management
             </h2>
             <p className="text-sm text-muted-foreground">
-              Track your business metrics and performance
+              Manage accounts, roles, and permissions
             </p>
           </div>
         </div>

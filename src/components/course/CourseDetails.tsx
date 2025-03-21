@@ -14,6 +14,7 @@ import {
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -49,6 +50,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
+// Initialize Stripe promise
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
+);
+
 interface CourseData {
   id: string;
   courseName: string;
@@ -64,6 +70,7 @@ interface CourseData {
   isPublished: boolean;
   courseTags?: string[];
   syllabus?: string;
+  stripePriceId?: string;
   [key: string]: any;
 }
 
@@ -225,7 +232,7 @@ export default function CourseDetail() {
     form.reset();
   };
 
-  // Handle ID card verification
+  // Handle ID card verification and direct checkout
   const onVerifyIdCard = async (values: z.infer<typeof idCardSchema>) => {
     try {
       setIsVerifying(true);
@@ -243,11 +250,36 @@ export default function CourseDetail() {
       const result = response.data;
 
       if (result.status === "Success") {
-        // ID verification successful - redirect to Stripe payment page
+        // ID verification successful
         setIsDialogOpen(false);
 
-        // Redirect to Stripe checkout page
-        router.push(`/checkout/${courseId}`);
+        // Get course data
+        if (!course) {
+          throw new Error("Course data is missing");
+        }
+
+        // Create checkout session
+        const checkoutResponse = await axios.post(
+          `http://localhost:20000/api/v1/create-checkout-session`,
+          {
+            stripePriceId: course.stripePriceId,
+            metadata: {
+              userId: session?.user?.id,
+              courseId: courseId,
+            },
+          }
+        );
+
+        // Get the session ID from the response
+        const sessionId = checkoutResponse.data.sessionId;
+
+        // Redirect to Stripe checkout
+        const stripe = await stripePromise;
+        if (stripe && sessionId) {
+          await stripe.redirectToCheckout({ sessionId });
+        } else {
+          throw new Error("Failed to initialize Stripe checkout");
+        }
       } else {
         // ID verification failed with a success response but error status
         setVerificationError({
@@ -257,7 +289,7 @@ export default function CourseDetail() {
         });
       }
     } catch (err) {
-      console.error("ID verification error:", err);
+      console.error("ID verification or checkout error:", err);
 
       // Handle axios error using the backend's error response format
       if (axios.isAxiosError(err) && err.response?.data) {
@@ -268,7 +300,9 @@ export default function CourseDetail() {
         setVerificationError({
           code: "CLIENT-ERROR",
           status: "Error",
-          message: (err as Error).message || "Failed to verify ID card",
+          message:
+            (err as Error).message ||
+            "Failed to verify ID card or create checkout session",
         });
       }
     } finally {
@@ -276,7 +310,6 @@ export default function CourseDetail() {
     }
   };
 
-  // Helper to get specific error handling based on error code
   const getErrorTitle = (errorCode: string) => {
     const errorTitles: Record<string, string> = {
       "Error-01-0001": "Invalid Request",

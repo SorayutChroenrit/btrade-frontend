@@ -11,7 +11,7 @@ export default async function BrowseCoursesPage() {
               Browse Courses
             </h2>
             <p className="text-sm text-muted-foreground">
-              Track your business metrics and performance
+              Discover and explore available learning opportunities
             </p>
           </div>
         </div>

@@ -33,7 +33,7 @@ const chartConfig = {
 
 export function DashboardOverview() {
   return (
-    <Card>
+    <Card className="py-8">
       <CardHeader>
         <CardTitle>Overview</CardTitle>
       </CardHeader>

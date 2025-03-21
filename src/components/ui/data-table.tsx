@@ -33,6 +33,7 @@ export function DataTable<TData, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState<string>("");
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -49,20 +50,19 @@ export function DataTable<TData, TValue>({
     state: {
       sorting,
       columnFilters,
+      globalFilter,
     },
   });
 
   return (
     <div>
       <div className="flex items-center py-4 justify-between">
-        {/* <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
-          }
+        <Input
+          placeholder="Filter across all columns..."
+          value={globalFilter}
+          onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
-        /> */}
+        />
       </div>
       <div className="rounded-md border">
         <Table>

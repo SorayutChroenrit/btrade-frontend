@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateCourseForm } from "./CreateCourseForm";
 import { ViewCourseDialog } from "./ViewCourseDialog";
+import { EditCourseForm } from "./EditCourseForm";
 
 // Fetch function that will be used by React Query
 const fetchCourses = async () => {
@@ -32,6 +33,8 @@ export default function AdminCourses() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewCourse, setViewCourse] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   // Use React Query to fetch the data
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -40,13 +43,13 @@ export default function AdminCourses() {
   });
 
   // Handle opening the form for editing
-  const handleEditCourse = (course) => {
-    setSelectedCourse(course);
-    setOpen(true);
+  const handleEditCourse = (id: any) => {
+    setSelectedCourseId(id);
+    setIsEditOpen(true);
   };
 
   // Function to handle closing the dialog
-  const handleCloseDialog = (open) => {
+  const handleCloseDialog = (open: boolean) => {
     setOpen(open);
     if (!open) {
       setSelectedCourse(null);
@@ -54,7 +57,7 @@ export default function AdminCourses() {
   };
 
   // Handle viewing course details
-  const handleViewCourse = (course) => {
+  const handleViewCourse = (course: any) => {
     setViewCourse(course);
     setViewOpen(true);
   };
@@ -79,7 +82,7 @@ export default function AdminCourses() {
             <DropdownMenuItem onClick={() => handleViewCourse(course)}>
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEditCourse(course)}>
+            <DropdownMenuItem onClick={() => handleEditCourse(course._id)}>
               Edit Course
             </DropdownMenuItem>
             <DropdownMenuItem className="text-red-600">
@@ -118,7 +121,7 @@ export default function AdminCourses() {
 
   return (
     <div className="container mx-auto">
-      <div className="flex items-center justify-end mb-4">
+      <div className="flex items-center justify-end ">
         <Button
           onClick={() => {
             setSelectedCourse(null);
@@ -132,15 +135,6 @@ export default function AdminCourses() {
         </Button>
       </div>
 
-      {/* Pass the state to the CourseForm component */}
-      <CreateCourseForm
-        open={open}
-        onOpenChange={handleCloseDialog}
-        initialData={selectedCourse}
-        onSuccess={() => refetch()}
-      />
-
-      {/* Add the ViewCourseDialog component */}
       <ViewCourseDialog
         open={viewOpen}
         onOpenChange={setViewOpen}
@@ -149,6 +143,16 @@ export default function AdminCourses() {
           setViewOpen(false);
           handleEditCourse(viewCourse);
         }}
+      />
+      <CreateCourseForm
+        open={open}
+        onOpenChange={handleCloseDialog}
+        onSuccess={() => refetch()}
+      />
+      <EditCourseForm
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        courseId={selectedCourseId}
       />
 
       <DataTable columns={columnsWithEdit} data={data || []} />

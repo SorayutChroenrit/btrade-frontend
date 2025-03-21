@@ -11,104 +11,59 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
 import { DataTableColumnHeader } from "../general/ColumnsHeader";
+import { UserData } from "@/lib/types";
+import dayjs from "dayjs";
 
-// Define the Course type based on your MongoDB schema
-export type User = {
-  _id: string;
-  courseName: string;
-  courseCode: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  price: number;
-  hours: number;
-  maxSeats: number;
-  availableSeats: number;
-  imageUrl: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export const columns: ColumnDef<User>[] = [
+export const columns: ColumnDef<UserData>[] = [
   {
-    accessorKey: "courseName",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Course Name" />
-    ),
-  },
-  {
-    accessorKey: "courseCode",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Code" />
-    ),
-  },
-  // {
-  //   accessorKey: "startDate",
-  //   header: "Start Date",
-  //   cell: ({ row }) => {
-  //     const date = new Date(row.getValue("startDate"));
-  //     return format(date, "MMM d, yyyy");
-  //   },
-  // },
-  // {
-  //   accessorKey: "endDate",
-  //   header: "End Date",
-  //   cell: ({ row }) => {
-  //     const date = new Date(row.getValue("endDate"));
-  //     return format(date, "MMM d, yyyy");
-  //   },
-  // },
-  {
-    accessorKey: "price",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Price" />
-    ),
+    id: "rowNumber",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="#" />,
     cell: ({ row }) => {
-      const price = parseFloat(row.getValue("price"));
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "THB",
-      }).format(price);
+      return row.index + 1;
     },
   },
   {
-    accessorKey: "hours",
+    accessorKey: "email",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Hours" />
+      <DataTableColumnHeader column={column} title="Email" />
     ),
   },
   {
-    accessorKey: "availableSeats",
-    header: "Available Seats",
+    accessorKey: "role",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Role" />
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
+  },
+  {
+    accessorKey: "lastLogin",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Last Login" />
+    ),
     cell: ({ row }) => {
-      const availableSeats = parseInt(row.getValue("availableSeats"));
-      const maxSeats = parseInt(row.original.maxSeats);
-
-      let status = "success";
-      if (availableSeats === 0) {
-        status = "destructive";
-      } else if (availableSeats < maxSeats * 0.2) {
-        status = "warning";
-      }
-
-      return (
-        <Badge
-          variant={status as "default" | "destructive" | "warning" | "success"}
-        >
-          {availableSeats}/{maxSeats}
-        </Badge>
-      );
+      const date = row.getValue("lastLogin") as string | Date;
+      return dayjs(date).format("HH:mm, D MMMM YYYY ");
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Created At" />
+    ),
+    cell: ({ row }) => {
+      const date = row.getValue("createdAt") as string | Date;
+      return dayjs(date).format("HH:mm, D MMMM YYYY ");
     },
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const course = row.original;
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -119,11 +74,6 @@ export const columns: ColumnDef<User>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(course._id)}
-            >
-              Copy ID
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>View Details</DropdownMenuItem>
             <DropdownMenuItem>Edit Course</DropdownMenuItem>

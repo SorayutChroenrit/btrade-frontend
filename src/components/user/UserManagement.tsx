@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { columns, User } from "./UserColumns";
+import { columns } from "./UserColumns";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { PlusCircle } from "lucide-react";
 import axios from "axios";
 import { Spinner } from "../ui/spinner";
 import { UserForm } from "./UserForm";
+import { UserData } from "@/lib/types";
 
 // Fetch function that will be used by React Query
-const fetchUser = async (): Promise<User[]> => {
+const fetchUser = async (): Promise<UserData[]> => {
   const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users`
   );
+  console.log(response.data.data);
   return response.data.data;
 };
 
@@ -28,13 +30,13 @@ export default function AdminUsers() {
     queryFn: fetchUser,
   });
 
-  console.log("Courses data:", data); // Add this line
+  // console.log("Courses data:", data);
 
   // Handle loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Spinner size="small" />
+        <Spinner size="large" color={"hero"} />
       </div>
     );
   }
@@ -46,7 +48,9 @@ export default function AdminUsers() {
         <p className="text-red-500">
           Error loading courses: {(error as Error).message}
         </p>
-        <Button onClick={() => refetch()}>Try Again</Button>
+        <Button variant={"hero"} onClick={() => refetch()}>
+          Try Again
+        </Button>
       </div>
     );
   }
@@ -60,11 +64,10 @@ export default function AdminUsers() {
           variant={"hero"}
         >
           <PlusCircle className="h-4 w-4" />
-          Create Course
+          Create User
         </Button>
       </div>
 
-      {/* Pass the state to the CourseForm component */}
       <UserForm open={open} onOpenChange={setOpen} />
       <DataTable columns={columns} data={data || []} />
     </div>

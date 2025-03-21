@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function DashbaordRecentSales() {
   return (
-    <Card>
+    <Card className="py-8">
       <CardHeader className="pb-2">
         <CardTitle>Recent Sales</CardTitle>
         <p className="text-sm text-muted-foreground">

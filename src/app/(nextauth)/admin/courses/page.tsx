@@ -11,7 +11,7 @@ export default function AdminCoursesPage() {
               Course Management
             </h2>
             <p className="text-sm text-muted-foreground">
-              Track your business metrics and performance
+              Create, update, and organize your course content
             </p>
           </div>
         </div>

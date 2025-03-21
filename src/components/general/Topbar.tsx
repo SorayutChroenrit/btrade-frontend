@@ -12,10 +12,14 @@ export default function Topbar() {
       </div>
       <div className="flex gap-2 mr-8">
         <Link href="/sign-in">
-          <Button variant={"hero"}>Sign in</Button>
+          <Button variant={"hero"} id="signin">
+            Sign in
+          </Button>
         </Link>
         <Link href="/sign-up">
-          <Button variant={"secondary"}>Sign up</Button>
+          <Button variant={"secondary"} id="signup">
+            Sign up
+          </Button>
         </Link>
       </div>
     </nav>

@@ -1,11 +1,13 @@
-import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
-export interface ApplicationPeriod {
-  startDate: string;
-  endDate: string;
-}
+// lib/types/index.ts
+
+import { DefaultSession, DefaultUser } from "next-auth";
+
+// Define user roles and status as string literal types
+export type UserRole = "admin" | "user";
+export type UserStatus = "Active" | "Suspended";
 
 export interface CourseData {
-  id: string;
+  _id: string;
   courseName: string;
   courseCode: string;
   description: string;
@@ -22,12 +24,66 @@ export interface CourseData {
   isPublished?: boolean;
 }
 
+export interface Training {
+  date: Date;
+  courseName: string;
+  location?: string;
+  hours: number;
+}
+
+export interface TimeDisplay {
+  years: number;
+  months: number;
+  days: number;
+}
+
+export interface Trader {
+  id: string;
+  userId: string;
+  company: string;
+  name: string;
+  idNumber: string;
+  email: string;
+  phoneNumber?: string;
+  startDate: Date;
+  endDate: Date;
+  durationDisplay: TimeDisplay;
+  remainingTimeDisplay: TimeDisplay;
+  trainings: Training[];
+  isDeleted: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface StatusHistoryItem {
+  status: string;
+  reason: string;
+  updatedAt: Date;
+  updatedBy?: string;
+}
+
+export interface UserData {
+  id?: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  status: UserStatus;
+  statusReason: string;
+  lastStatusUpdate: Date;
+  lastLogin: Date | null;
+  statusHistory: StatusHistoryItem[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Next-Auth type extensions
 declare module "next-auth" {
   interface User extends DefaultUser {
     role?: string;
     accessToken?: string;
     traderId?: string;
-    traderInfo?: any;
+    traderInfo?: Trader;
+    status?: UserStatus;
   }
 
   interface Session {
@@ -37,7 +93,8 @@ declare module "next-auth" {
       role?: string;
       accessToken?: string;
       traderId?: string;
-      traderInfo?: any;
+      traderInfo?: Trader;
+      status?: UserStatus;
     } & DefaultSession["user"];
   }
 
@@ -47,6 +104,7 @@ declare module "next-auth" {
     role?: string;
     accessToken?: string;
     traderId?: string;
-    traderInfo?: any;
+    traderInfo?: Trader;
+    status?: UserStatus;
   }
 }
