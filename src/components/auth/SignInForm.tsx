@@ -25,7 +25,7 @@ import { Spinner } from "../ui/spinner";
 // Define the schema for sign-in
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export function SignInForm({
@@ -142,6 +142,7 @@ export function SignInForm({
                   />
                 </div>
                 <Button
+                  id="submit"
                   type="submit"
                   className="w-full"
                   variant="hero"

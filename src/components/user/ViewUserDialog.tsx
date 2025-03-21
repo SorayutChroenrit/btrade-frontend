@@ -140,7 +140,7 @@ export function ViewUserTrainingDialog({
         return "Invalid date";
       }
 
-      return dateValue.format("MMM D, YYYY");
+      return dateValue.format("MMMM D, YYYY");
     } catch (error) {
       console.error("Error formatting date:", error);
       return "Invalid date";
@@ -157,7 +157,7 @@ export function ViewUserTrainingDialog({
         return "Invalid date";
       }
 
-      return dateValue.format("MMM D, YYYY [at] HH:mm");
+      return dateValue.format("MMMM D, YYYY [at] HH:mm");
     } catch (error) {
       console.error("Error formatting date:", error);
       return "Invalid date";
