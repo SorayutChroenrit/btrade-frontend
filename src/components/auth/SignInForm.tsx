@@ -63,7 +63,6 @@ export function SignInForm({
 
         // Fetch the session to get user data including role
         const session = await getSession();
-        console.log(session?.user);
         // Redirect based on user role
         if (session?.user?.role === "admin") {
           router.push("/admin/dashboard");

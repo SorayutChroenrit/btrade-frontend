@@ -63,7 +63,7 @@ export default function ResetPassword({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       // Send request to your backend API for password reset
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/reset-password`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/reset-password`,
         {
           token: token,
           newPassword: data.password,

@@ -145,7 +145,7 @@ export function AccountDialog({
       setError(null);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${id}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${traderId}`
       );
 
       if (!response.ok) {

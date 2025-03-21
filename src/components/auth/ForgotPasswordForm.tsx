@@ -131,7 +131,7 @@ export default function ForgetPassword({
                   >
                     {isSubmitting ? (
                       <>
-                        <Spinner size="large" color={"hero"} />
+                        <Spinner size="small" />
                         <span>Sending...</span>
                       </>
                     ) : (

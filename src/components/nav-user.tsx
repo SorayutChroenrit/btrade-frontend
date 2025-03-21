@@ -65,6 +65,7 @@ interface AccountUpdateValues {
 
 // Define session user type with traderInfo
 interface SessionUser {
+  id: string;
   traderId: string;
   traderInfo?: TraderInfo;
 }
@@ -252,7 +253,7 @@ export function NavUser() {
       {/* Account Dialog */}
       {user?.traderInfo && (
         <AccountDialog
-          traderId={user.traderId}
+          traderId={user.id}
           open={showAccountDialog}
           onOpenChange={setShowAccountDialog}
           onUpdate={handleUpdateAccount}

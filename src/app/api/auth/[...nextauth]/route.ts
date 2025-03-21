@@ -11,7 +11,7 @@ interface User {
   email: string;
   role: string;
   traderId: string;
-  traderInfo: any; // Consider creating a specific type for traderInfo
+  traderInfo: any;
   accessToken: string;
 }
 

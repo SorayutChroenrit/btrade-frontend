@@ -1,3 +1,4 @@
+import EnrollmentApproval from "@/components/course/Approval";
 import { Separator } from "@/components/ui/separator";
 
 export default function AdminUsersPage() {
@@ -7,7 +8,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4">
           <div className="space-y-1">
             <h2 className="text-3xl font-bold tracking-tight">
-              Course Analytics
+              Approval for user register course
             </h2>
             <p className="text-sm text-muted-foreground">
               Track course performance and student engagement
@@ -16,7 +17,7 @@ export default function AdminUsersPage() {
         </div>
         <Separator className="my-2" />
       </div>
-      {/* <Approvals /> */}
+      <EnrollmentApproval />
     </div>
   );
 }
