@@ -647,7 +647,7 @@ export function CreateCourseForm({ open, onOpenChange }: CourseFormProps) {
               >
                 {mutation.isPending ? (
                   <>
-                    <Spinner size="normal" />
+                    <Spinner size="small" />
                     Creating...
                   </>
                 ) : (

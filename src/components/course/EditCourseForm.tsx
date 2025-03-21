@@ -112,8 +112,15 @@ export function EditCourseForm({
     queryKey: ["course", courseId],
     queryFn: async () => {
       if (!courseId) return null;
+
+      // If courseId is an object with an _id property, use that
+      const id =
+        typeof courseId === "object" && courseId?._id ? courseId._id : courseId;
+
+      console.log("Using ID:", id);
+
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${id}`
       );
       console.log("API Response:", response.data);
       return response.data;

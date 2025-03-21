@@ -29,8 +29,8 @@ const fetchCourses = async () => {
 };
 
 export default function AdminCourses() {
-  const [open, setOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [open, setOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewCourse, setViewCourse] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -67,7 +67,6 @@ export default function AdminCourses() {
     id: "actions",
     cell: ({ row }) => {
       const course = row.original;
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

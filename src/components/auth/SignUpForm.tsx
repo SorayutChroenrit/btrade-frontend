@@ -239,7 +239,7 @@ export function SignUpForm({
                   <FormControl>
                     <Input
                       id="phonenumber"
-                      placeholder="+66 (555) 123-4567"
+                      placeholder="0811234567"
                       type="text"
                       required
                       {...field}

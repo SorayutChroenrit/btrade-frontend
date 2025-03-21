@@ -1,16 +1,6 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "../general/ColumnsHeader";
 import { UserData } from "@/lib/types";
 import dayjs from "dayjs";
@@ -47,8 +37,17 @@ export const columns: ColumnDef<UserData>[] = [
       <DataTableColumnHeader column={column} title="Last Login" />
     ),
     cell: ({ row }) => {
-      const date = row.getValue("lastLogin") as string | Date;
-      return dayjs(date).format("HH:mm, D MMMM YYYY ");
+      const date = row.getValue("lastLogin") as string | Date | null;
+
+      if (!date) {
+        return (
+          <span className="text-muted-foreground italic">
+            Not logged in yet
+          </span>
+        );
+      }
+
+      return dayjs(date).format("HH:mm, D MMMM YYYY");
     },
   },
   {
@@ -58,31 +57,7 @@ export const columns: ColumnDef<UserData>[] = [
     ),
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as string | Date;
-      return dayjs(date).format("HH:mm, D MMMM YYYY ");
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View Details</DropdownMenuItem>
-            <DropdownMenuItem>Edit Course</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
-              Delete Course
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return dayjs(date).format("HH:mm, D MMMM YYYY");
     },
   },
 ];

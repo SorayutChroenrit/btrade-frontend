@@ -6,27 +6,13 @@ import axios from "axios";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Filter,
-  MoreVertical,
-  ArrowRight,
-} from "lucide-react";
+import { Calendar, MapPin, Clock, Filter, ArrowRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
@@ -46,6 +32,7 @@ interface Training {
 }
 
 interface User {
+  id: string;
   traderId: string;
 }
 
@@ -60,12 +47,11 @@ export default function MyCoursesClient() {
 
   // Function to fetch user data with trainings
   const fetchUserData = async (): Promise<UserData> => {
-    if (!user?.traderId) {
+    if (!user?.id) {
       throw new Error("User ID not available");
     }
-
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${user.traderId}`
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${user.id}`
     );
     return response.data.data;
   };
