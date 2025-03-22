@@ -229,6 +229,7 @@ export function CreateCourseForm({
                     <FormLabel>Course Name</FormLabel>
                     <FormControl>
                       <Input
+                        id="coursename"
                         placeholder="Introduction to Programming"
                         {...field}
                       />
@@ -245,7 +246,7 @@ export function CreateCourseForm({
                   <FormItem>
                     <FormLabel>Course Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="CS101" {...field} />
+                      <Input id="coursecode" placeholder="CS101" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -261,6 +262,7 @@ export function CreateCourseForm({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
+                      id="description"
                       placeholder="A comprehensive introduction to programming concepts..."
                       {...field}
                       rows={4}
@@ -282,6 +284,7 @@ export function CreateCourseForm({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
+                            id="startdate"
                             variant="outline"
                             className="w-full pl-3 text-left font-normal"
                           >
@@ -325,6 +328,7 @@ export function CreateCourseForm({
                           <Button
                             variant="outline"
                             className="w-full pl-3 text-left font-normal"
+                            id="enddate"
                           >
                             {field.value ? (
                               format(field.value, "PPP")
@@ -388,6 +392,7 @@ export function CreateCourseForm({
                           <Button
                             variant="outline"
                             className="w-full pl-3 text-left font-normal"
+                            id="coursetag"
                           >
                             {field.value.length > 0
                               ? `${field.value.length} tag${
@@ -466,7 +471,11 @@ export function CreateCourseForm({
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input placeholder="Main Campus, Room 101" {...field} />
+                    <Input
+                      id="location"
+                      placeholder="Main Campus, Room 101"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -482,6 +491,7 @@ export function CreateCourseForm({
                     <FormLabel>Price (฿)</FormLabel>
                     <FormControl>
                       <Input
+                        id="price"
                         type="number"
                         placeholder="499.99"
                         {...field}
@@ -506,6 +516,7 @@ export function CreateCourseForm({
                     <FormLabel>Hours</FormLabel>
                     <FormControl>
                       <Input
+                        id="hours"
                         type="number"
                         placeholder="40"
                         {...field}
@@ -529,6 +540,7 @@ export function CreateCourseForm({
                     <FormLabel>Max Seats</FormLabel>
                     <FormControl>
                       <Input
+                        id="maxseats"
                         type="number"
                         placeholder="30"
                         {...field}
@@ -647,6 +659,7 @@ export function CreateCourseForm({
                 Cancel
               </Button>
               <Button
+                id="submit"
                 type="submit"
                 variant={"hero"}
                 disabled={mutation.isPending || !isDateAfterEndDate}
