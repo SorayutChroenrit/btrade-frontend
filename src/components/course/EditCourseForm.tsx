@@ -35,6 +35,8 @@ import { CalendarIcon, X } from "lucide-react";
 import { format, parse } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 // Define the validation schema
 const courseSchema = z.object({
@@ -57,6 +59,7 @@ const courseSchema = z.object({
   maxSeats: z.number().positive("Max seats must be a positive number"),
   availableSeats: z.number().nonnegative("Available seats cannot be negative"),
   imageUrl: z.string().url("Image URL must be a valid URL").optional(),
+  isPublished: z.boolean().default(false),
 });
 
 type CourseFormData = z.infer<typeof courseSchema>;
@@ -104,6 +107,7 @@ export function EditCourseForm({
       maxSeats: 0,
       availableSeats: 0,
       imageUrl: "",
+      isPublished: false,
     },
   });
 
@@ -178,6 +182,7 @@ export function EditCourseForm({
         maxSeats: safeParseInt(courseData.maxSeats),
         availableSeats: safeParseInt(courseData.availableSeats),
         imageUrl: courseData.imageUrl || "",
+        isPublished: courseData.isPublished || false,
       });
     }
   }, [courseResponse, form]);
@@ -233,10 +238,12 @@ export function EditCourseForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Course</DialogTitle>
-          <DialogDescription>
-            Update the course details. Fields marked with * are required.
-          </DialogDescription>
+          <div className="flex flex-col space-y-2">
+            <DialogTitle>Edit Course</DialogTitle>
+            <DialogDescription>
+              Update the course details. Fields marked with * are required.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -244,6 +251,39 @@ export function EditCourseForm({
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Status Toggle at the top */}
+              <FormField
+                control={form.control}
+                name="isPublished"
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="course-status">Course Status</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {field.value
+                          ? "Course is public and visible to all users"
+                          : "Course is private and only visible to administrators"}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Label
+                        htmlFor="course-status"
+                        className={
+                          field.value ? "text-primary" : "text-muted-foreground"
+                        }
+                      >
+                        {field.value ? "Published" : "Private"}
+                      </Label>
+                      <Switch
+                        id="course-status"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </div>
+                  </div>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

@@ -23,6 +23,10 @@ const badgeVariants = cva(
           "border-sky-300 bg-sky-100 text-sky-800 [a&]:hover:bg-sky-200",
         comingsoon:
           "border-violet-300 bg-violet-100 text-violet-800 [a&]:hover:bg-violet-200",
+        published:
+          "border-green-300 bg-green-100 text-green-800 [a&]:hover:bg-green-200",
+        private:
+          "border-gray-300 bg-gray-100 text-gray-800 [a&]:hover:bg-gray-200",
       },
     },
     defaultVariants: {
