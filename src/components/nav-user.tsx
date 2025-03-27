@@ -94,7 +94,13 @@ export function NavUser() {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
+    // Show toast before signing out
+    toast.success("Successfully logged out of B-Trade");
+
+    // Small delay to ensure the toast is visible before redirecting
+    setTimeout(async () => {
+      await signOut({ callbackUrl: "/" });
+    }, 500);
   };
 
   // Updated function to include traderId from the session
