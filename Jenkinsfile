@@ -28,7 +28,7 @@ pipeline {
                 }
                     echo "Docker Image to Running Container"
                     sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
-                    sh "/usr/local/bin/docker run -d --name btradefrontend-run -p 20000:3000 btradefrontend:latest"
+                    sh "/usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 btradefrontend:latest"
             }
         }
         
