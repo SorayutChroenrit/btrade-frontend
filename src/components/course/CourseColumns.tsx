@@ -29,6 +29,7 @@ export type Course = {
   maxSeats: number;
   availableSeats: number;
   imageUrl: string;
+  isPublished: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -79,17 +80,17 @@ export const columns: ColumnDef<Course>[] = [
       const availableSeats = parseInt(row.getValue("availableSeats"));
       const maxSeats = parseInt(row.original.maxSeats);
 
-      let status = "success";
+      // Use the badge variants we've defined
+      let badgeVariant: "success" | "destructive" | "warning" = "success";
+
       if (availableSeats === 0) {
-        status = "destructive";
+        badgeVariant = "destructive";
       } else if (availableSeats < maxSeats * 0.2) {
-        status = "warning";
+        badgeVariant = "warning";
       }
 
       return (
-        <Badge
-          variant={status as "default" | "destructive" | "warning" | "success"}
-        >
+        <Badge variant={badgeVariant}>
           {availableSeats}/{maxSeats}
         </Badge>
       );
@@ -98,8 +99,40 @@ export const columns: ColumnDef<Course>[] = [
   {
     accessorKey: "isPublished",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Publish" />
+      <DataTableColumnHeader column={column} title="Visibility" />
     ),
+    cell: ({ row }) => {
+      const value = row.getValue("isPublished");
+      // Convert boolean to string display value
+      const isPublished = value === true ? "Published" : "Private";
+
+      const variant = isPublished === "Published" ? "published" : "private";
+
+      return <Badge variant={variant}>{isPublished}</Badge>;
+    },
+  },
+  {
+    accessorKey: "isDeleted",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
+    cell: ({ row }) => {
+      const isDeleted = row.getValue("isDeleted");
+
+      return (
+        <div className="flex items-center">
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              isDeleted
+                ? "bg-red-100 text-red-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {isDeleted ? "Deleted" : "Active"}
+          </span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "createdAt",

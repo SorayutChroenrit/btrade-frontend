@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { columns as baseColumns } from "@/components/course/CourseColumns";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -16,19 +16,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CreateCourseForm } from "./CreateCourseForm";
 import { ViewCourseDialog } from "./ViewCourseDialog";
 import { EditCourseForm } from "./EditCourseForm";
-
-// Fetch function that will be used by React Query
-const fetchCourses = async () => {
-  const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses`
-  );
-  return response.data.data;
-};
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function AdminCourses() {
+  const { data: session } = useSession();
+  const user = session?.user;
+  const queryClient = useQueryClient();
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [open, setOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -36,11 +43,78 @@ export default function AdminCourses() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
+  // State for delete confirmation dialog
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+
+  // Fetch function that will be used by React Query
+  const fetchCourses = async () => {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data.data;
+  };
+
   // Use React Query to fetch the data
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["courses"],
     queryFn: fetchCourses,
   });
+
+  // Function to show the delete confirmation dialog
+  const confirmDelete = (courseId: string) => {
+    setCourseToDelete(courseId);
+    setShowDeleteDialog(true);
+  };
+
+  // Function to perform the actual deletion
+  const deleteCourse = async () => {
+    if (!courseToDelete) {
+      console.error("Course ID is required for deletion");
+      return;
+    }
+
+    try {
+      // Create the request payload for soft deletion
+      const requestPayload = {
+        courseId: courseToDelete,
+        updateFields: {
+          isDeleted: true,
+        },
+      };
+
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
+        requestPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Update the cache
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+
+      // Show success message
+      toast.success("Course has been deleted successfully");
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      // Handle error
+      toast.error("Failed to delete the course. Please try again.");
+    } finally {
+      // Reset the state
+      setCourseToDelete(null);
+      setShowDeleteDialog(false);
+    }
+  };
 
   // Handle opening the form for editing
   const handleEditCourse = (id: any) => {
@@ -84,7 +158,10 @@ export default function AdminCourses() {
             <DropdownMenuItem onClick={() => handleEditCourse(course._id)}>
               Edit Course
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => confirmDelete(course._id)}
+            >
               Delete Course
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -153,6 +230,27 @@ export default function AdminCourses() {
         onOpenChange={setIsEditOpen}
         courseId={selectedCourseId}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will delete the course. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteCourse}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <DataTable columns={columnsWithEdit} data={data || []} />
     </div>

@@ -7,11 +7,9 @@ export default function AdminUsersPage() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4">
           <div className="space-y-1">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Approval for user register course
-            </h2>
+            <h2 className="text-3xl font-bold tracking-tight">Approval</h2>
             <p className="text-sm text-muted-foreground">
-              Track course performance and student engagement
+              Approval after user finished course
             </p>
           </div>
         </div>

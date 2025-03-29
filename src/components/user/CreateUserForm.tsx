@@ -101,7 +101,6 @@ export function CreateUserDialog({
         userData,
         {
           headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
             "Content-Type": "application/json",
           },
         }

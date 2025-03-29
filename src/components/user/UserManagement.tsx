@@ -19,6 +19,7 @@ import {
 import { CreateUserDialog } from "./CreateUserForm";
 import { ViewUserTrainingDialog } from "./ViewUserDialog";
 import { EditUserDialog } from "./EditUserDialog";
+import { useSession } from "next-auth/react";
 
 interface UserData {
   _id: string;
@@ -75,10 +76,19 @@ interface TraderData {
   updatedAt: Date;
 }
 
+const { data: session } = useSession();
+const user = session?.user;
+
 // Fetch function that will be used by React Query
 const fetchUsers = async () => {
   const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user`,
+    {
+      headers: {
+        Authorization: `Bearer ${user?.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    }
   );
   console.log(response.data.data);
   return response.data.data;
@@ -88,7 +98,13 @@ const fetchUsers = async () => {
 const fetchTraderByUserId = async (traderId: string) => {
   console.log(traderId);
   const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${traderId}`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${traderId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${user?.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    }
   );
   console.log(response.data.data);
   return response.data.data;

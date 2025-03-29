@@ -83,29 +83,6 @@ const data = {
   ],
 };
 
-const SidebarLogo = () => {
-  return (
-    <Link
-      href="/"
-      className="flex items-center gap-2 sm:gap-3 w-full transition-all duration-300"
-    >
-      <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md shadow-md bg-white  flex-shrink-0 transition-all duration-300 flex items-center justify-center">
-        <Image
-          src="/logo.png"
-          alt="B-TRADE Logo"
-          width={40}
-          height={40}
-          className="object-contain p-1"
-          priority
-        />
-      </div>
-      <div className="font-bold text-lg sm:text-xl transition-all duration-300 truncate">
-        <span className="text-[#FDAB04] dark:text-[#FFB726]">B-Trade</span>
-      </div>
-    </Link>
-  );
-};
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 

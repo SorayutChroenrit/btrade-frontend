@@ -35,6 +35,7 @@ import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useSession } from "next-auth/react";
 
 // Define the validation schema
 const userSchema = z.object({
@@ -67,6 +68,8 @@ interface UserFormProps {
 }
 
 export function UserForm({ open, onOpenChange, initialData }: UserFormProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
   const isEditing = !!initialData;
   const queryClient = useQueryClient();
   const [showTagPopover, setShowTagPopover] = useState(false);
@@ -132,15 +135,27 @@ export function UserForm({ open, onOpenChange, initialData }: UserFormProps) {
 
       if (isEditing) {
         return axios.put(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${initialData._id}`,
-          formattedData
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course/${initialData._id}`,
+          formattedData,
+          {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
       } else {
         // Set available seats to maxSeats for new courses
         formattedData.availableSeats = formattedData.maxSeats;
         return axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses`,
-          formattedData
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
+          formattedData,
+          {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
       }
     },

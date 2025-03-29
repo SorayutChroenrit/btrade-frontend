@@ -63,7 +63,7 @@ const courseSchema = z
     price: z.number().positive("Price must be a positive number"),
     hours: z.number().positive("Hours must be a positive number"),
     maxSeats: z.number().positive("Max seats must be a positive number"),
-    courseImage: z.instanceof(File),
+    courseImage: z.instanceof(File).optional().nullable(),
   })
   .refine(
     (data) => {
@@ -126,7 +126,7 @@ export function CreateCourseForm({
       price: 0,
       hours: 0,
       maxSeats: 0,
-      courseImage: undefined,
+      courseImage: null,
     },
     mode: "onChange",
   });
@@ -162,10 +162,14 @@ export function CreateCourseForm({
       formData.append("availableSeats", data.maxSeats.toString());
       formData.append("price", data.price.toString());
       formData.append("hours", data.hours.toString());
-      formData.append("courseImage", data.courseImage);
+
+      // Only append courseImage if it exists
+      if (data.courseImage) {
+        formData.append("courseImage", data.courseImage);
+      }
 
       return axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
         formData,
         {
           headers: {
@@ -563,7 +567,7 @@ export function CreateCourseForm({
               name="courseImage"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Course Image</FormLabel>
+                  <FormLabel>Course Image (Optional)</FormLabel>
                   <FormControl>
                     <div className="space-y-4">
                       <div className="flex items-center gap-4 w-full">

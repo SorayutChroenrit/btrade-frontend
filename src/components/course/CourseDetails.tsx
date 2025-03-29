@@ -29,6 +29,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -102,7 +103,8 @@ const idCardSchema = z.object({
 export default function CourseDetail() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const user = session?.user;
   const [course, setCourse] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +113,8 @@ export default function CourseDetail() {
   const [verificationError, setVerificationError] =
     useState<ErrorResponse | null>(null);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [isProcessingPayment, setIsProcessingPayment] =
+    useState<boolean>(false);
   const courseId = params.courseId as string;
 
   // Initialize the form
@@ -128,11 +132,26 @@ export default function CourseDetail() {
   }, [session]);
 
   useEffect(() => {
+    // Only fetch course details when session status is determined (authenticated or unauthenticated)
+    if (sessionStatus === "loading") {
+      return; // Exit early if session is still loading
+    }
+
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course/${courseId}`,
+          {
+            headers: {
+              ...(user?.accessToken
+                ? {
+                    Authorization: `Bearer ${user.accessToken}`,
+                  }
+                : {}),
+              "Content-Type": "application/json",
+            },
+          }
         );
 
         const result = response.data;
@@ -160,7 +179,7 @@ export default function CourseDetail() {
     if (courseId) {
       fetchCourseDetails();
     }
-  }, [courseId]);
+  }, [courseId, sessionStatus, user]);
 
   const getEnrollmentStatus = () => {
     if (!course) return { percent: 0, color: "bg-gray-300" };
@@ -201,32 +220,6 @@ export default function CourseDetail() {
     );
   };
 
-  const handleDelete = async () => {
-    if (
-      confirm(
-        "Are you sure you want to delete this course? This action cannot be undone."
-      )
-    ) {
-      try {
-        await axios.delete(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}api/v1/courses/${courseId}`
-        );
-        router.push("/admin/courses");
-      } catch (err) {
-        console.error("Failed to delete course:", err);
-        if (axios.isAxiosError(err)) {
-          alert(
-            `Failed to delete course: ${
-              err.response?.data?.message || err.message
-            }`
-          );
-        } else {
-          alert(`Failed to delete course: ${(err as Error).message}`);
-        }
-      }
-    }
-  };
-
   // Handle opening the ID verification dialog
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -242,10 +235,16 @@ export default function CourseDetail() {
 
       // Make a call to your backend API to verify the ID card
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/verify-id`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/verify-id`,
         {
           userId: session?.user?.id,
           idCard: values.idCard,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -255,11 +254,16 @@ export default function CourseDetail() {
         // ID verification successful
         setIsDialogOpen(false);
 
+        // Show verification success toast
+        toast.success("ID Verification Successful", {});
+
         // Get course data
         if (!course) {
           throw new Error("Course data is missing");
         }
 
+        // Set processing payment state
+        setIsProcessingPayment(true);
         // Create checkout session
         const checkoutResponse = await axios.post(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/create-checkout-session`,
@@ -269,11 +273,20 @@ export default function CourseDetail() {
               userId: session?.user?.id,
               courseId: courseId,
             },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`,
+              "Content-Type": "application/json",
+            },
           }
         );
 
         // Get the session ID from the response
         const sessionId = checkoutResponse.data.sessionId;
+
+        // Small delay to allow toast to be seen
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         // Redirect to Stripe checkout
         const stripe = await stripePromise;
@@ -297,18 +310,30 @@ export default function CourseDetail() {
       if (axios.isAxiosError(err) && err.response?.data) {
         const serverError = err.response.data as ErrorResponse;
         setVerificationError(serverError);
+
+        // Show error toast
+        toast.error(getErrorTitle(serverError.code), {
+          description: serverError.message,
+        });
       } else {
         // Fallback error when backend response isn't available
+        const errorMessage =
+          (err as Error).message ||
+          "Failed to verify ID card or create checkout session";
         setVerificationError({
           code: "CLIENT-ERROR",
           status: "Error",
-          message:
-            (err as Error).message ||
-            "Failed to verify ID card or create checkout session",
+          message: errorMessage,
+        });
+
+        // Show error toast
+        toast.error("Error", {
+          description: errorMessage,
         });
       }
     } finally {
       setIsVerifying(false);
+      setIsProcessingPayment(false);
     }
   };
 
@@ -324,7 +349,8 @@ export default function CourseDetail() {
     return errorTitles[errorCode] || "Verification Failed";
   };
 
-  if (loading) {
+  // Show loading state while session is loading
+  if (sessionStatus === "loading" || loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -612,8 +638,16 @@ export default function CourseDetail() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" variant={"hero"} disabled={isVerifying}>
-                  {isVerifying ? "Verifying..." : "Verify and Continue"}
+                <Button
+                  type="submit"
+                  variant={"hero"}
+                  disabled={isVerifying || isProcessingPayment}
+                >
+                  {isVerifying
+                    ? "Verifying..."
+                    : isProcessingPayment
+                    ? "Processing Payment..."
+                    : "Verify and Continue"}
                 </Button>
               </DialogFooter>
             </form>

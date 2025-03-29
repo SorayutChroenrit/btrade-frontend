@@ -39,8 +39,9 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock } from "lucide-react";
+import { useSession } from "next-auth/react";
 
-// Initialize dayjs plugins
+// Initialize dayjs plugins (still needed for date formatting)
 dayjs.extend(relativeTime);
 dayjs.extend(duration);
 
@@ -77,6 +78,12 @@ interface TrainingInfo {
   description: string;
 }
 
+interface Duration {
+  years: number;
+  months: number;
+  days: number;
+}
+
 interface TraderInfo {
   userId: { $oid: string };
   company: string;
@@ -86,8 +93,8 @@ interface TraderInfo {
   phoneNumber: string;
   startDate: { $date: string };
   endDate: { $date: string };
-  durationDisplay: { years: number; months: number; days: number };
-  remainingTimeDisplay: { years: number; months: number; days: number };
+  durationDisplay: Duration;
+  remainingTimeDisplay: Duration;
   trainings: TrainingInfo[];
   isDeleted: boolean;
   createdAt: { $date: string };
@@ -118,6 +125,8 @@ export function AccountDialog({
   traderId,
   onUpdate,
 }: AccountDialogProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [traderInfo, setTraderInfo] = useState<TraderInfo | null>(null);
@@ -145,7 +154,13 @@ export function AccountDialog({
       setError(null);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${traderId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${traderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (!response.ok) {
@@ -218,62 +233,6 @@ export function AccountDialog({
     }
   };
 
-  // Calculate durations with dayjs
-  const calculateDuration = (startDate: any, endDate: any) => {
-    if (!startDate || !endDate) {
-      return { years: 0, months: 0, days: 0 };
-    }
-
-    try {
-      const start = dayjs(startDate.$date || startDate);
-      const end = dayjs(endDate.$date || endDate);
-
-      if (!start.isValid() || !end.isValid()) {
-        return { years: 0, months: 0, days: 0 };
-      }
-
-      const diffInDays = end.diff(start, "day");
-      const duration = dayjs.duration(diffInDays, "day");
-
-      return {
-        years: duration.years(),
-        months: duration.months(),
-        days: duration.days(),
-      };
-    } catch (error) {
-      console.error("Duration calculation error:", error);
-      return { years: 0, months: 0, days: 0 };
-    }
-  };
-
-  // Calculate remaining time with dayjs
-  const calculateRemainingTime = (endDate: any) => {
-    if (!endDate) {
-      return { years: 0, months: 0, days: 0 };
-    }
-
-    try {
-      const end = dayjs(endDate.$date || endDate);
-      const now = dayjs();
-
-      if (!end.isValid() || end.isBefore(now)) {
-        return { years: 0, months: 0, days: 0 };
-      }
-
-      const diffInDays = end.diff(now, "day");
-      const duration = dayjs.duration(diffInDays, "day");
-
-      return {
-        years: duration.years(),
-        months: duration.months(),
-        days: duration.days(),
-      };
-    } catch (error) {
-      console.error("Remaining time calculation error:", error);
-      return { years: 0, months: 0, days: 0 };
-    }
-  };
-
   async function onSubmit(values: AccountFormValues) {
     try {
       setIsSubmitting(true);
@@ -296,8 +255,6 @@ export function AccountDialog({
           });
         } catch (error) {
           console.error("Failed to refresh trader data:", error);
-          // We don't show an error toast here since the update was successful
-          // But we log the error for debugging purposes
         }
       }
 
@@ -375,9 +332,17 @@ export function AccountDialog({
     );
   }
 
-  // Calculate durations with dayjs
-  const duration = calculateDuration(traderInfo.startDate, traderInfo.endDate);
-  const remainingTime = calculateRemainingTime(traderInfo.endDate);
+  // Use the backend-calculated durations directly from traderInfo
+  const duration = traderInfo.durationDisplay || {
+    years: 0,
+    months: 0,
+    days: 0,
+  };
+  const remainingTime = traderInfo.remainingTimeDisplay || {
+    years: 0,
+    months: 0,
+    days: 0,
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

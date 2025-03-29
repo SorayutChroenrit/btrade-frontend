@@ -1,4 +1,6 @@
-import { Button } from "../ui/button";
+"use client";
+
+import { Button } from "@/components/ui/button";
 import { CalendarIcon, DownloadIcon } from "lucide-react";
 import {
   Select,
@@ -10,8 +12,20 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { useSession } from "next-auth/react";
 
-export default function DashboardHeader() {
+interface DashboardHeaderProps {
+  onTimeframeChange: (timeframe: string) => void;
+  currentTimeframe: string;
+}
+
+export default function DashboardHeader({
+  onTimeframeChange,
+  currentTimeframe,
+}: DashboardHeaderProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
+
   return (
     <div className="mb-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4">
@@ -31,7 +45,10 @@ export default function DashboardHeader() {
             Live Data
           </Badge>
 
-          <Select defaultValue="last7days">
+          <Select
+            defaultValue={currentTimeframe}
+            onValueChange={onTimeframeChange}
+          >
             <SelectTrigger className="w-[180px] border-slate-200">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-slate-500" />
@@ -46,11 +63,6 @@ export default function DashboardHeader() {
               </SelectGroup>
             </SelectContent>
           </Select>
-
-          <Button className="gap-2" variant={"hero"}>
-            <DownloadIcon className="h-4 w-4" />
-            <span>Export</span>
-          </Button>
         </div>
       </div>
       <Separator className="my-2" />

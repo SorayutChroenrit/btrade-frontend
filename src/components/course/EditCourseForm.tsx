@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useSession } from "next-auth/react";
 
 // Define the validation schema
 const courseSchema = z.object({
@@ -64,10 +65,13 @@ const courseSchema = z.object({
 
 type CourseFormData = z.infer<typeof courseSchema>;
 
+// Define a proper type for the courseId
+type CourseIdType = string | { _id: string } | null;
+
 interface EditCourseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  courseId: string | null;
+  courseId: CourseIdType;
 }
 
 export function EditCourseForm({
@@ -75,20 +79,10 @@ export function EditCourseForm({
   onOpenChange,
   courseId,
 }: EditCourseFormProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
   const [showTagPopover, setShowTagPopover] = useState(false);
-
-  // Course tag options
-  const courseTags = [
-    { value: "programming", label: "Programming" },
-    { value: "design", label: "Design" },
-    { value: "business", label: "Business" },
-    { value: "marketing", label: "Marketing" },
-    { value: "science", label: "Science" },
-    { value: "language", label: "Language" },
-    { value: "math", label: "Mathematics" },
-    { value: "other", label: "Other" },
-  ];
 
   // Initialize form with default values
   const form = useForm<CourseFormData>({
@@ -111,25 +105,44 @@ export function EditCourseForm({
     },
   });
 
+  const courseTags = [
+    { value: "New Course", label: "New Course" },
+    { value: "Coming Soon", label: "Coming Soon" },
+  ];
+
+  // Function to extract the actual ID from courseId
+  const getActualId = (courseId: CourseIdType): string | null => {
+    if (!courseId) return null;
+    if (typeof courseId === "string") return courseId;
+    if (typeof courseId === "object" && courseId !== null && "_id" in courseId)
+      return courseId._id;
+    return null;
+  };
+
+  // Get the actual ID
+  const actualId = getActualId(courseId);
+
   // Fetch course data when courseId changes
   const { data: courseResponse, isLoading } = useQuery({
-    queryKey: ["course", courseId],
+    queryKey: ["course", actualId],
     queryFn: async () => {
-      if (!courseId) return null;
+      if (!actualId) return null;
 
-      // If courseId is an object with an _id property, use that
-      const id =
-        typeof courseId === "object" && courseId?._id ? courseId._id : courseId;
-
-      console.log("Using ID:", id);
+      console.log("Using ID:", actualId);
 
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${id}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course/${actualId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
       console.log("API Response:", response.data);
       return response.data;
     },
-    enabled: !!courseId && open,
+    enabled: !!actualId && open,
   });
 
   // Update form when courseData changes
@@ -138,18 +151,18 @@ export function EditCourseForm({
       const courseData = courseResponse.data;
 
       // Safely parse numbers
-      const safeParseInt = (value) => {
+      const safeParseInt = (value: any): number => {
         const parsed = parseInt(value);
         return isNaN(parsed) ? 0 : parsed;
       };
 
-      const safeParseFloat = (value) => {
+      const safeParseFloat = (value: any): number => {
         const parsed = parseFloat(value);
         return isNaN(parsed) ? 0 : parsed;
       };
 
       // Safely parse dates
-      const safeParseDate = (dateString) => {
+      const safeParseDate = (dateString: any): Date => {
         if (!dateString) return new Date();
 
         try {
@@ -189,11 +202,11 @@ export function EditCourseForm({
 
   // Create mutation for updating course
   const mutation = useMutation({
-    mutationFn: async (data: Partial<CourseFormData>) => {
-      if (!courseId) throw new Error("Course ID is required for editing");
+    mutationFn: async (data: CourseFormData) => {
+      if (!actualId) throw new Error("Course ID is required for editing");
 
-      // Only include fields that have been changed
-      const formattedData: Partial<CourseFormData> = {};
+      // Process data into the format API expects
+      const formattedData: Record<string, any> = {};
 
       // Add fields that exist in the data object
       Object.keys(data).forEach((key) => {
@@ -205,24 +218,36 @@ export function EditCourseForm({
             typedKey === "endDate" ||
             typedKey === "courseDate"
           ) {
-            formattedData[typedKey] = format(
-              data[typedKey] as Date,
-              "yyyy-MM-dd"
-            );
+            const dateValue = data[typedKey];
+            if (dateValue instanceof Date) {
+              formattedData[typedKey] = format(dateValue, "yyyy-MM-dd");
+            }
           } else {
             formattedData[typedKey] = data[typedKey];
           }
         }
       });
 
+      // Create the request payload in the structure the API expects
+      const requestPayload = {
+        courseId: actualId,
+        updateFields: formattedData,
+      };
+
       return axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/courses/${courseId}`,
-        formattedData
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
+        requestPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
-      queryClient.invalidateQueries({ queryKey: ["course", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["course", actualId] });
       onOpenChange(false);
     },
     onError: (error) => {
@@ -230,8 +255,11 @@ export function EditCourseForm({
     },
   });
 
+
   const onSubmit = (data: CourseFormData) => {
-    mutation.mutate(data);
+    // Ensure the data is valid before submitting
+    const validatedData = courseSchema.parse(data);
+    mutation.mutate(validatedData);
   };
 
   return (

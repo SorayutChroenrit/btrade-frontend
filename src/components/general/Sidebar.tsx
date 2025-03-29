@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import Link from "next/link";
-import { NavUser } from "../nav-user";
 import {
   BookOpen,
   GraduationCap,
@@ -22,23 +21,10 @@ import {
   ClipboardList,
   Users,
   CheckCircle,
-  LogOut,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Button } from "../ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { ModeToggle } from "./ModeToggle";
+import { NavUser } from "../nav-user";
 
 // This is sample data.
 export const data = {
@@ -96,21 +82,19 @@ const SidebarLogo = () => {
   return (
     <Link
       href="/"
-      className="flex items-center gap-2 sm:gap-3 w-full transition-all duration-300"
+      className="flex items-center transition-all duration-300 hover:opacity-90"
     >
-      <div className="relative w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-md shadow-md bg-white flex-shrink-0 transition-all duration-300 flex items-center justify-center">
-        <Image
-          src="/logo.png"
-          alt="B-TRADE Logo"
-          width={40}
-          height={40}
-          className="object-contain p-1"
-          priority
-        />
-      </div>
-      <div className="font-bold text-lg sm:text-xl transition-all duration-300 truncate">
-        <span className="text-[#FDAB04] dark:text-[#FFB726]">B-Trade</span>
-      </div>
+      <Image
+        src="/logo.png"
+        alt="B-Trade Logo"
+        width={36}
+        height={36}
+        className="object-contain w-auto h-6 xs:h-7 sm:h-8 md:h-9"
+        priority
+      />
+      <span className="font-bold text-base xs:text-lg sm:text-xl md:text-2xl text-[#FDAB04] dark:text-[#FFB726] tracking-tighter ml-0.5 xs:ml-1">
+        - Trade
+      </span>
     </Link>
   );
 };

@@ -6,11 +6,15 @@ import {
   Bell,
   ChevronsUpDown,
   CreditCard,
+  KeyRound,
   LogOut,
   Moon,
   Sun,
 } from "lucide-react";
 import axios from "axios";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -23,6 +27,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +59,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "next-auth/react";
 import { Skeleton } from "./ui/skeleton";
 import { useTheme } from "next-themes";
@@ -68,7 +90,19 @@ interface SessionUser {
   id: string;
   traderId: string;
   traderInfo?: TraderInfo;
+  accessToken: string;
 }
+
+// Define schema for code validation
+const codeSchema = z.object({
+  enteredCode: z
+    .string()
+    .min(6, "Code must be at least 6 characters")
+    .max(6, "Code must be exactly 6 characters")
+    .regex(/^\d+$/, "Code must contain only numbers"),
+});
+
+type CodeFormValues = z.infer<typeof codeSchema>;
 
 export function NavUser() {
   const { data: session, status } = useSession();
@@ -77,8 +111,18 @@ export function NavUser() {
   const { isMobile } = useSidebar();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [showCodeDialog, setShowCodeDialog] = useState(false);
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+
+  // Code validation form
+  const codeForm = useForm<CodeFormValues>({
+    resolver: zodResolver(codeSchema),
+    defaultValues: {
+      enteredCode: "",
+    },
+  });
 
   const getInitials = (name: string | undefined): string => {
     if (!name) return "U";
@@ -97,7 +141,6 @@ export function NavUser() {
     // Show toast before signing out
     toast.success("Successfully logged out of B-Trade");
 
-    // Small delay to ensure the toast is visible before redirecting
     setTimeout(async () => {
       await signOut({ callbackUrl: "/" });
     }, 500);
@@ -120,10 +163,11 @@ export function NavUser() {
 
       console.log(requestData);
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/update-profile`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader`,
         requestData,
         {
           headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
             "Content-Type": "application/json",
           },
         }
@@ -135,6 +179,41 @@ export function NavUser() {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile. Please try again.");
       throw error;
+    }
+  };
+
+  // Handle code validation
+  const handleValidateCode = async (values: CodeFormValues) => {
+    if (!user) {
+      toast.error("You must be logged in to validate a course code");
+      return;
+    }
+
+    setIsValidatingCode(true);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/validateCode`,
+        { enteredCode: values.enteredCode },
+        {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Handle successful validation
+      toast.success(response.data.message);
+      codeForm.reset();
+      setShowCodeDialog(false);
+    } catch (error: any) {
+      // Handle error
+      const errorMessage =
+        error.response?.data?.message ||
+        "Failed to validate code. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsValidatingCode(false);
     }
   };
 
@@ -214,6 +293,10 @@ export function NavUser() {
                   <BadgeCheck className="mr-2 h-4 w-4" />
                   Account
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setShowCodeDialog(true)}>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Validate Course
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setTheme(isDark ? "light" : "dark")}
                 >
@@ -265,6 +348,73 @@ export function NavUser() {
           onUpdate={handleUpdateAccount}
         />
       )}
+
+      {/* Code Validation Dialog */}
+      <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex gap-2">
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
+              Validate Course Attendance
+            </DialogTitle>
+            <DialogDescription>
+              Enter the 6-digit code provided by your instructor to confirm your
+              attendance.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...codeForm}>
+            <form
+              onSubmit={codeForm.handleSubmit(handleValidateCode)}
+              className="space-y-6 py-4"
+            >
+              <FormField
+                control={codeForm.control}
+                name="enteredCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Validation Code</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Enter 6-digit code"
+                          className="text-center text-lg tracking-widest"
+                          maxLength={6}
+                          {...field}
+                          onChange={(e) => {
+                            // Only allow numeric input
+                            const value = e.target.value.replace(/\D/g, "");
+                            field.onChange(value);
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCodeDialog(false)}
+                  disabled={isValidatingCode}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-[#FDAB04] text-white hover:bg-[#FDAB04]/90"
+                  disabled={isValidatingCode}
+                >
+                  {isValidatingCode ? "Validating..." : "Validate Code"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

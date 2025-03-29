@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Clock, Filter, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
@@ -41,9 +41,8 @@ interface UserData {
 }
 
 export default function MyCoursesClient() {
-  const [filter, setFilter] = useState("all");
-  const { data: session, status } = useSession();
-  const user = session?.user as User | undefined;
+  const { data: session } = useSession();
+  const user = session?.user;
 
   // Function to fetch user data with trainings
   const fetchUserData = async (): Promise<UserData> => {
@@ -51,7 +50,13 @@ export default function MyCoursesClient() {
       throw new Error("User ID not available");
     }
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${user.id}`
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
     return response.data.data;
   };
@@ -235,7 +240,7 @@ export default function MyCoursesClient() {
 
                 <CardFooter className="pt-2">
                   <Link
-                    href={`/courses/${getCourseId(course)}`}
+                    href={`/course/${getCourseId(course)}`}
                     className="w-full"
                   >
                     <Button className="w-full" variant={"hero"}>
@@ -299,7 +304,7 @@ export default function MyCoursesClient() {
                     </div>
 
                     <div className="mt-4 flex justify-end">
-                      <Link href={`/courses/${getCourseId(course)}`}>
+                      <Link href={`/course/${getCourseId(course)}`}>
                         <Button variant={"hero"} size="sm">
                           View Details
                         </Button>

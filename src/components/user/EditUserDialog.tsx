@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { Building, Mail, Phone, CreditCard } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 // Define the form schema with Zod
 const userFormSchema = z.object({
@@ -51,6 +52,8 @@ export function EditUserDialog({
   userId,
   onSuccess,
 }: EditUserDialogProps) {
+  const { data: session } = useSession();
+  const user = session?.user;
   const [isLoading, setIsLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,14 +81,26 @@ export function EditUserDialog({
       try {
         // Fetch user data
         const userResponse = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/${userId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
         const userData = userResponse.data.data;
         // Fetch trader data
         let traderData = null;
         try {
           const traderResponse = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/${userId}`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${user?.accessToken}`,
+                "Content-Type": "application/json",
+              },
+            }
           );
           traderData = traderResponse.data.data;
           // Store the trader ID for later use
@@ -122,28 +137,39 @@ export function EditUserDialog({
     try {
       // Update user data (just email)
       await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/update-user`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/update-user`,
         {
           _id: userId,
           email: data.email,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user?.accessToken}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
       if (traderId) {
         try {
           await axios.put(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/traders/update-profile`,
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/update-profile`,
             {
               traderId,
               email: data.email,
               company: data.company,
               idCard: data.idCard,
               phoneNumber: data.phoneNumber,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${user?.accessToken}`,
+                "Content-Type": "application/json",
+              },
             }
           );
         } catch (err) {
           console.log("Error updating trader profile:", err);
-          // Continue execution even if trader update fails
         }
       }
 
