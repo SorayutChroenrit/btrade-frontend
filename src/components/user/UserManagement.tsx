@@ -76,40 +76,6 @@ interface TraderData {
   updatedAt: Date;
 }
 
-const { data: session } = useSession();
-const user = session?.user;
-
-// Fetch function that will be used by React Query
-const fetchUsers = async () => {
-  const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user`,
-    {
-      headers: {
-        Authorization: `Bearer ${user?.accessToken}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-  console.log(response.data.data);
-  return response.data.data;
-};
-
-// Fetch trader data by user ID
-const fetchTraderByUserId = async (traderId: string) => {
-  console.log(traderId);
-  const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${traderId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${user?.accessToken}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-  console.log(response.data.data);
-  return response.data.data;
-};
-
 export default function AdminUsers() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -119,10 +85,46 @@ export default function AdminUsers() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isLoadingTrader, setIsLoadingTrader] = useState(false);
 
+  // Move the useSession hook inside the component
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  // Fetch function that will be used by React Query
+  const fetchUsers = async () => {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(response.data.data);
+    return response.data.data;
+  };
+
+  // Fetch trader data by user ID
+  const fetchTraderByUserId = async (traderId: string) => {
+    console.log(traderId);
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${traderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(response.data.data);
+    return response.data.data;
+  };
+
   // Use React Query to fetch the users data
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
+    enabled: !!user?.accessToken, // Only run query when we have an access token
   });
 
   // Handle opening the form for editing a user
