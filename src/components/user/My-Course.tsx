@@ -240,7 +240,7 @@ export default function MyCoursesClient() {
 
                 <CardFooter className="pt-2">
                   <Link
-                    href={`/course/${getCourseId(course)}`}
+                    href={`/courses/${getCourseId(course)}`}
                     className="w-full"
                   >
                     <Button className="w-full" variant={"hero"}>

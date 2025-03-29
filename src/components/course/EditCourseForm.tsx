@@ -31,13 +31,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, UploadCloud } from "lucide-react";
 import { format, parse } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { DateTimePicker24h } from "../ui/24datetimepicker";
+import { Spinner } from "../ui/spinner";
 
 // Define the validation schema
 const courseSchema = z.object({
@@ -59,7 +62,7 @@ const courseSchema = z.object({
   hours: z.number().positive("Hours must be a positive number"),
   maxSeats: z.number().positive("Max seats must be a positive number"),
   availableSeats: z.number().nonnegative("Available seats cannot be negative"),
-  imageUrl: z.string().url("Image URL must be a valid URL").optional(),
+  courseImage: z.instanceof(File).optional().nullable(),
   isPublished: z.boolean().default(false),
 });
 
@@ -83,6 +86,7 @@ export function EditCourseForm({
   const user = session?.user;
   const queryClient = useQueryClient();
   const [showTagPopover, setShowTagPopover] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Initialize form with default values
   const form = useForm<CourseFormData>({
@@ -100,14 +104,15 @@ export function EditCourseForm({
       hours: 0,
       maxSeats: 0,
       availableSeats: 0,
-      imageUrl: "",
+      courseImage: null,
       isPublished: false,
     },
   });
 
   const courseTags = [
     { value: "New Course", label: "New Course" },
-    { value: "Coming Soon", label: "Coming Soon" },
+    { value: "Recently Updated", label: "Recently Updated" },
+    { value: "comingsComing Soonoon", label: "Coming Soon" },
   ];
 
   // Function to extract the actual ID from courseId
@@ -121,6 +126,13 @@ export function EditCourseForm({
 
   // Get the actual ID
   const actualId = getActualId(courseId);
+
+  // Reset image preview when form opens or closes
+  useEffect(() => {
+    if (!open) {
+      setImagePreview(null);
+    }
+  }, [open]);
 
   // Fetch course data when courseId changes
   const { data: courseResponse, isLoading } = useQuery({
@@ -148,6 +160,9 @@ export function EditCourseForm({
   // Update form when courseData changes
   useEffect(() => {
     if (courseResponse && courseResponse.data) {
+      // Reset the image preview first
+      setImagePreview(null);
+
       const courseData = courseResponse.data;
 
       // Safely parse numbers
@@ -194,9 +209,14 @@ export function EditCourseForm({
         hours: safeParseInt(courseData.hours),
         maxSeats: safeParseInt(courseData.maxSeats),
         availableSeats: safeParseInt(courseData.availableSeats),
-        imageUrl: courseData.imageUrl || "",
+        courseImage: null,
         isPublished: courseData.isPublished || false,
       });
+
+      // Set image preview if course has an image
+      if (courseData.imageUrl) {
+        setImagePreview(courseData.imageUrl);
+      }
     }
   }, [courseResponse, form]);
 
@@ -205,65 +225,84 @@ export function EditCourseForm({
     mutationFn: async (data: CourseFormData) => {
       if (!actualId) throw new Error("Course ID is required for editing");
 
-      // Process data into the format API expects
-      const formattedData: Record<string, any> = {};
+      // Create a FormData object for the update
+      const formData = new FormData();
+      formData.append("courseId", actualId);
 
-      // Add fields that exist in the data object
-      Object.keys(data).forEach((key) => {
-        const typedKey = key as keyof CourseFormData;
-        if (data[typedKey] !== undefined) {
-          // Format dates if they exist in the data
-          if (
-            typedKey === "startDate" ||
-            typedKey === "endDate" ||
-            typedKey === "courseDate"
-          ) {
-            const dateValue = data[typedKey];
-            if (dateValue instanceof Date) {
-              formattedData[typedKey] = format(dateValue, "yyyy-MM-dd");
-            }
-          } else {
-            formattedData[typedKey] = data[typedKey];
-          }
-        }
-      });
+      // Format dates for API
+      const formattedStartDate = format(data.startDate, "yyyy-MM-dd");
+      const formattedEndDate = format(data.endDate, "yyyy-MM-dd");
+      const formattedCourseDate = format(
+        data.courseDate,
+        "yyyy-MM-dd'T'HH:mm:ss"
+      );
 
-      // Create the request payload in the structure the API expects
-      const requestPayload = {
-        courseId: actualId,
-        updateFields: formattedData,
-      };
+      // Add all fields to FormData
+      formData.append("courseName", data.courseName);
+      formData.append("courseCode", data.courseCode);
+      formData.append("description", data.description);
+      formData.append("startDate", formattedStartDate);
+      formData.append("endDate", formattedEndDate);
+      formData.append("courseDate", formattedCourseDate);
+      formData.append("location", data.location || "");
+      formData.append("courseTags", JSON.stringify(data.courseTags));
+      formData.append("price", data.price.toString());
+      formData.append("hours", data.hours.toString());
+      formData.append("maxSeats", data.maxSeats.toString());
+      formData.append("availableSeats", data.availableSeats.toString());
+      formData.append("isPublished", data.isPublished.toString());
 
+      // Only append courseImage if it exists
+      if (data.courseImage instanceof File) {
+        formData.append("courseImage", data.courseImage);
+      }
+
+      // Create the request payload with FormData
       return axios.put(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
-        requestPayload,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${user?.accessToken}`,
-            "Content-Type": "application/json",
+            "Content-Type": "multipart/form-data",
           },
         }
       );
     },
     onSuccess: () => {
+      toast.success("Course updated successfully");
+      setImagePreview(null); // Clear image preview
+
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", actualId] });
       onOpenChange(false);
     },
     onError: (error) => {
       console.error("Error updating course:", error);
+      toast.error("Failed to update course. Please try again.");
     },
   });
 
-
   const onSubmit = (data: CourseFormData) => {
     // Ensure the data is valid before submitting
-    const validatedData = courseSchema.parse(data);
-    mutation.mutate(validatedData);
+    mutation.mutate(data);
   };
 
+  // Get form values for validation
+  const startDate = form.watch("startDate");
+  const endDate = form.watch("endDate");
+  const courseDate = form.watch("courseDate");
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpenState) => {
+        if (!newOpenState) {
+          setImagePreview(null); // Clear image preview when closing the dialog
+        }
+        onOpenChange(newOpenState);
+      }}
+    >
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex flex-col space-y-2">
@@ -444,31 +483,10 @@ export function EditCourseForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Course Date*</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className="w-full pl-3 text-left font-normal"
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DateTimePicker24h
+                        selectedDate={field.value}
+                        onChange={field.onChange}
+                      />
                       <FormMessage />
                     </FormItem>
                   )}
@@ -664,15 +682,93 @@ export function EditCourseForm({
 
               <FormField
                 control={form.control}
-                name="imageUrl"
+                name="courseImage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Image URL</FormLabel>
+                    <FormLabel>Course Image (Optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="https://example.com/course-image.jpg"
-                        {...field}
-                      />
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 w-full">
+                          {/* Upload area - 50% width */}
+                          <Label
+                            htmlFor="course-image"
+                            className="cursor-pointer w-1/2"
+                          >
+                            <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-gray-400 transition-colors">
+                              <UploadCloud className="h-8 w-8 text-gray-500 mb-2" />
+                              <span className="text-sm text-gray-500">
+                                {field.value || imagePreview
+                                  ? "Change image"
+                                  : "Upload image"}
+                              </span>
+                            </div>
+                            <Input
+                              id="course-image"
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  // Store the file object for form submission
+                                  field.onChange(file);
+
+                                  // Create preview URL
+                                  const reader = new FileReader();
+                                  reader.onload = (e) => {
+                                    setImagePreview(e.target?.result as string);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </Label>
+
+                          {/* Preview area - 50% width */}
+                          <div className="w-1/2 h-32">
+                            {imagePreview || field.value ? (
+                              <div className="relative h-full w-full rounded-lg overflow-hidden border border-gray-200">
+                                <img
+                                  src={
+                                    imagePreview ||
+                                    (field.value instanceof File
+                                      ? URL.createObjectURL(field.value)
+                                      : undefined)
+                                  }
+                                  alt="Course preview"
+                                  className="h-full w-full object-cover"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                  onClick={() => {
+                                    field.onChange(null);
+                                    setImagePreview(null);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center h-full w-full rounded-lg border border-dashed border-gray-200">
+                                <span className="text-sm text-gray-400">
+                                  Preview will appear here
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {field.value && (
+                          <p className="text-sm text-gray-500">
+                            {field.value instanceof File
+                              ? field.value.name
+                              : "Image selected"}
+                          </p>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -683,7 +779,10 @@ export function EditCourseForm({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => {
+                    setImagePreview(null);
+                    onOpenChange(false);
+                  }}
                 >
                   Cancel
                 </Button>
@@ -692,7 +791,14 @@ export function EditCourseForm({
                   variant={"hero"}
                   disabled={mutation.isPending}
                 >
-                  {mutation.isPending ? "Saving..." : "Save Changes"}
+                  {mutation.isPending ? (
+                    <>
+                      <Spinner size="small" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </DialogFooter>
             </form>

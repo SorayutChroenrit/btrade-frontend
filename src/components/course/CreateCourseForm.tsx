@@ -107,9 +107,9 @@ export function CreateCourseForm({
   const tomorrow = addDays(new Date(), 1);
   // Course tag options
   const courseTags = [
-    { value: "newcourse", label: "NewCourse" },
-    { value: "recentlyupdated", label: "RecentlyUpdated" },
-    { value: "comingsoon", label: "ComingSoon" },
+    { value: "New Course", label: "New Course" },
+    { value: "Recently Updated", label: "Recently Updated" },
+    { value: "comingsComing Soonoon", label: "Coming Soon" },
   ];
 
   const form = useForm<CourseFormData>({
@@ -147,7 +147,10 @@ export function CreateCourseForm({
       // Format dates for API
       const formattedStartDate = format(data.startDate, "yyyy-MM-dd");
       const formattedEndDate = format(data.endDate, "yyyy-MM-dd");
-      const formattedCourseDate = format(data.courseDate, "yyyy-MM-dd");
+      const formattedCourseDate = format(
+        data.courseDate,
+        "yyyy-MM-dd'T'HH:mm:ss"
+      );
 
       // Add all your form fields to FormData
       formData.append("courseName", data.courseName);

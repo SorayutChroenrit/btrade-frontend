@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
@@ -115,6 +115,11 @@ export default function CourseDetail() {
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isProcessingPayment, setIsProcessingPayment] =
     useState<boolean>(false);
+  const [isAlreadyRegistered, setIsAlreadyRegistered] =
+    useState<boolean>(false);
+  const [registrationStatusMessage, setRegistrationStatusMessage] = useState<
+    string | null
+  >(null);
   const courseId = params.courseId as string;
 
   // Initialize the form
@@ -131,6 +136,84 @@ export default function CourseDetail() {
     }
   }, [session]);
 
+  // Check if the user is already registered for this course
+  const checkRegistrationStatus = useCallback(async () => {
+    if (!user?.id || !courseId) return;
+
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/check-status`,
+        {
+          params: {
+            userId: user.id,
+            courseId: courseId,
+          },
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = response.data;
+      if (result.status === "Success" && result.data) {
+        setIsAlreadyRegistered(result.data.isRegistered || false);
+      }
+    } catch (err) {
+      console.error("Failed to check registration status:", err);
+      // Don't set an error, just assume not registered if the check fails
+    }
+  }, [user, courseId]);
+
+  // Calculate registration status message
+  const calculateRegistrationStatus = useCallback(() => {
+    if (!course) return null;
+
+    const now = new Date();
+    const startDate = course.startDate ? new Date(course.startDate) : null;
+    const endDate = course.endDate ? new Date(course.endDate) : null;
+    const courseDate = course.courseDate ? new Date(course.courseDate) : null;
+
+    if (courseDate && now >= courseDate) {
+      return "This course has already started";
+    } else if (startDate && now < startDate) {
+      return `Registration opens on ${formatDate(course.startDate)}`;
+    } else if (endDate && now > endDate) {
+      return "Registration period has ended";
+    } else if (course.availableSeats <= 0) {
+      return "No available seats";
+    }
+
+    return null;
+  }, [course]);
+
+  // Check if course is open for registration
+  const isRegistrationOpen = useCallback(() => {
+    if (!course) return false;
+
+    const now = new Date();
+    const startDate = course.startDate ? new Date(course.startDate) : null;
+    const endDate = course.endDate ? new Date(course.endDate) : null;
+    const courseDate = course.courseDate ? new Date(course.courseDate) : null;
+
+    // Check if the courseDate is in the past
+    const isCourseInFuture = courseDate === null || now < courseDate;
+
+    // Course is open for registration if:
+    // 1. Current date is between registration start and end dates
+    // 2. There are available seats
+    // 3. The course date hasn't passed yet
+    return (
+      startDate !== null &&
+      endDate !== null &&
+      now >= startDate &&
+      now <= endDate &&
+      course.availableSeats > 0 &&
+      isCourseInFuture
+    );
+  }, [course]);
+
+  // Effect to fetch course details
   useEffect(() => {
     // Only fetch course details when session status is determined (authenticated or unauthenticated)
     if (sessionStatus === "loading") {
@@ -181,6 +264,19 @@ export default function CourseDetail() {
     }
   }, [courseId, sessionStatus, user]);
 
+  // Effect to check registration status after course is loaded
+  useEffect(() => {
+    if (course && user?.id) {
+      checkRegistrationStatus();
+    }
+  }, [course, user?.id, checkRegistrationStatus]);
+
+  // Effect to update registration status message when course changes
+  useEffect(() => {
+    const message = calculateRegistrationStatus();
+    setRegistrationStatusMessage(message);
+  }, [course, calculateRegistrationStatus]);
+
   const getEnrollmentStatus = () => {
     if (!course) return { percent: 0, color: "bg-gray-300" };
 
@@ -200,24 +296,6 @@ export default function CourseDetail() {
       percent: percentFull,
       color: progressColor,
     };
-  };
-
-  // Check if course is open for registration
-  const isRegistrationOpen = () => {
-    if (!course) return false;
-
-    const now = new Date();
-    const startDate = course.startDate ? new Date(course.startDate) : null;
-    const endDate = course.endDate ? new Date(course.endDate) : null;
-
-    // Course is open for registration if current date is between start and end dates
-    return (
-      startDate !== null &&
-      endDate !== null &&
-      now >= startDate &&
-      now <= endDate &&
-      course.availableSeats > 0
-    );
   };
 
   // Handle opening the ID verification dialog
@@ -433,7 +511,7 @@ export default function CourseDetail() {
   const enrollmentStatus = getEnrollmentStatus();
   const courseTags = course.courseTags || [];
   const currentEnrollment = course.maxSeats - course.availableSeats;
-  const canRegister = !isAdmin && isRegistrationOpen();
+  const canRegister = !isAdmin && isRegistrationOpen() && !isAlreadyRegistered;
 
   return (
     <div>
@@ -543,29 +621,64 @@ export default function CourseDetail() {
             </CardContent>
           </Card>
 
-          {/* Registration status/button card */}
-          {canRegister && (
-            <Card className="bg-blue-50 border-blue-200 overflow-hidden">
+          {/* Registration status/button card - Updated version */}
+          {!isAdmin && (
+            <Card
+              className={`${
+                isRegistrationOpen()
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-gray-50 border-gray-200"
+              } overflow-hidden`}
+            >
               <CardContent className="pt-6 pb-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between text-blue-700">
-                    <span className="font-medium">Registration Open</span>
-                    <Badge
-                      variant="outline"
-                      className="bg-white text-blue-700 border-blue-300"
-                    >
-                      {course.availableSeats} seats left
-                    </Badge>
-                  </div>
+                  {isAlreadyRegistered ? (
+                    <div className="flex items-center justify-center text-green-600">
+                      <Check className="h-6 w-6 mr-2" />
+                      <span className="font-medium">
+                        You are already registered
+                      </span>
+                    </div>
+                  ) : registrationStatusMessage ? (
+                    <div className="flex items-center justify-between text-gray-700">
+                      <span className="font-medium">
+                        {registrationStatusMessage}
+                      </span>
+                      {course.availableSeats > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="bg-white text-gray-700 border-gray-300"
+                        >
+                          {course.availableSeats} seats left
+                        </Badge>
+                      )}
+                    </div>
+                  ) : isRegistrationOpen() ? (
+                    <div className="flex items-center justify-between text-blue-700">
+                      <span className="font-medium">Registration Open</span>
+                      <Badge
+                        variant="outline"
+                        className="bg-white text-blue-700 border-blue-300"
+                      >
+                        {course.availableSeats} seats left
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-gray-700">
+                      <span className="font-medium">Registration Closed</span>
+                    </div>
+                  )}
 
-                  <Button
-                    className="w-full"
-                    variant="hero"
-                    onClick={handleOpenDialog}
-                  >
-                    Register Now
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  {canRegister && (
+                    <Button
+                      className="w-full"
+                      variant="hero"
+                      onClick={handleOpenDialog}
+                    >
+                      Register Now
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
