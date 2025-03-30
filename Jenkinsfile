@@ -41,7 +41,7 @@ pipeline {
                         $class: 'GitSCM',
                         branches: [[name: '*/main']],
                         userRemoteConfigs: [[
-                            credentialsId: 'Sorayut',
+                            credentialsId: 'sorayutapple@gmail.com',
                             url: 'https://github.com/SorayutChroenrit/btrader-frontend'
                         ]]
                     ])
@@ -79,7 +79,7 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: '*/master']],
                     userRemoteConfigs: [[
-                        credentialsId: 'Sorayut',
+                        credentialsId: 'sorayutapple@gmail.com',
                         url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
                     ]]
                 ])
