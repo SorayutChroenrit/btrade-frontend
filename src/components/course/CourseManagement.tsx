@@ -81,12 +81,9 @@ export default function AdminCourses() {
     }
 
     try {
-      // Create the request payload for soft deletion
       const requestPayload = {
         courseId: courseToDelete,
-        updateFields: {
-          isDeleted: true,
-        },
+        isDeleted: true,
       };
 
       await axios.put(

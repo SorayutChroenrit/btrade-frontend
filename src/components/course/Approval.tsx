@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { columns } from "./ApprovalColumns";
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
 export default function EnrollmentApprovalPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -19,8 +20,8 @@ export default function EnrollmentApprovalPage() {
     }
 
     try {
-      // Fetch validated enrollments
-      const enrollmentsResponse = await axios.get(
+      // Fetch validated enrollments directly from the API
+      const response = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/validated-enrollments`,
         {
           headers: {
@@ -29,74 +30,27 @@ export default function EnrollmentApprovalPage() {
           },
         }
       );
-      const enrollments = enrollmentsResponse.data.data;
 
-      // Extract unique course IDs and trader IDs (filter out undefined values)
-      const courseIds = [
-        ...new Set(enrollments.map((item) => item.courseId).filter(Boolean)),
-      ];
-      const traderIds = [
-        ...new Set(
-          enrollments
-            .map((item) => item.traderId || item.userId)
-            .filter(Boolean)
-        ),
-      ];
-
-      // Fetch course details
-      const coursesResponse = await Promise.all(
-        courseIds.map((id) =>
-          axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${user.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          )
-        )
-      );
-      const courses = coursesResponse.map((res) => res.data.data);
-
-      // Fetch trader details only for valid trader IDs
-      const tradersResponse = await Promise.all(
-        traderIds.map((id) =>
-          axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${user.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          )
-        )
-      );
-
-      // Extract trader data correctly from API response
-      const traders = tradersResponse.map((res) => res.data.data);
-
-      // Map courses and traders to enrollments
-      const enrichedEnrollments = enrollments.map((enrollment) => {
-        const course = courses.find((c) => c._id === enrollment.courseId);
-
-        const trader = traders.find(
-          (t) =>
-            t._id === enrollment.traderId ||
-            t._id === enrollment.userId ||
-            t.userId === enrollment.traderId ||
-            t.userId === enrollment.userId
-        );
-
-        return {
-          ...enrollment,
-          course,
-          trader,
-        };
-      });
-
-      return enrichedEnrollments;
+      // Map the API response to the expected format for the DataTable
+      return response.data.data.map((item) => ({
+        _id: item.enrollmentId,
+        userId: item.trader.userId,
+        courseId: item.course.id,
+        status: item.status,
+        enrollDate: item.course.date, // Using course date if enrollDate isn't available
+        trader: {
+          _id: item.trader.id,
+          name: item.trader.name,
+          email: item.trader.email,
+          phoneNumber: item.trader.phoneNumber,
+        },
+        course: {
+          _id: item.course.id,
+          courseName: item.course.name,
+          courseCode: item.course.id.substring(0, 6), // Using part of the ID as code if no code is provided
+          description: item.course.location, // Using location as description
+        },
+      }));
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
       throw error;
@@ -109,6 +63,19 @@ export default function EnrollmentApprovalPage() {
     queryFn: fetchValidatedEnrollments,
     enabled: !!user?.accessToken, // Only run query when accessToken is available
   });
+
+  // Listen for enrollment update events to refresh the data
+  useEffect(() => {
+    const handleEnrollmentUpdate = () => {
+      refetch();
+    };
+
+    window.addEventListener("enrollment-updated", handleEnrollmentUpdate);
+
+    return () => {
+      window.removeEventListener("enrollment-updated", handleEnrollmentUpdate);
+    };
+  }, [refetch]);
 
   // Handle session loading state
   if (sessionStatus === "loading") {

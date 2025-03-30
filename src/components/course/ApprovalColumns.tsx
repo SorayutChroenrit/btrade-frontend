@@ -55,9 +55,9 @@ export type PendingEnrollment = {
   courseId: string;
   enrollDate: string;
   status: string;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
   course?: Course;
   trader?: Trader;
 };
@@ -69,9 +69,7 @@ const ActionCell = ({ enrollment }: { enrollment: PendingEnrollment }) => {
   const handleApprove = async () => {
     try {
       if (!session?.user) {
-        toast.error("Authentication Error", {
-          description: "You must be logged in to approve enrollments",
-        });
+        toast.error("Authentication Error", {});
         return;
       }
 
@@ -79,9 +77,7 @@ const ActionCell = ({ enrollment }: { enrollment: PendingEnrollment }) => {
       const user = session.user as User;
 
       if (!user.id || !user.accessToken) {
-        toast.error("Authentication Error", {
-          description: "Invalid user session. Please log in again.",
-        });
+        toast.error("Authentication Error", {});
         return;
       }
 
@@ -101,9 +97,7 @@ const ActionCell = ({ enrollment }: { enrollment: PendingEnrollment }) => {
         }
       );
 
-      toast.success("Enrollment Approved", {
-        description: "The enrollment has been successfully approved",
-      });
+      toast.success("Enrollment Approved", {});
 
       window.dispatchEvent(new CustomEvent("enrollment-updated"));
     } catch (error: unknown) {
@@ -116,9 +110,7 @@ const ActionCell = ({ enrollment }: { enrollment: PendingEnrollment }) => {
 
       // Handle authentication errors specifically
       if (axiosError.response?.status === 401) {
-        toast.error("Authentication Error", {
-          description: "Your session has expired. Please log in again.",
-        });
+        toast.error("Authentication Error", {});
         return;
       }
 
@@ -223,13 +215,6 @@ export const columns: ColumnDef<PendingEnrollment>[] = [
     cell: ({ row }) => {
       return row.index + 1;
     },
-  },
-  {
-    accessorKey: "courseCode",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Course Code" />
-    ),
-    cell: ({ row }) => row.original.course?.courseCode || "N/A",
   },
   {
     accessorKey: "courseName",

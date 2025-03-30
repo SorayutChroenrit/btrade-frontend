@@ -7,6 +7,7 @@ import * as z from "zod";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import duration from "dayjs/plugin/duration";
+import axios from "axios"; // Import axios
 
 import { toast } from "sonner";
 
@@ -119,6 +120,8 @@ const maskData = (value: string, visibleChars: number = 4): string => {
   return maskedPart + visiblePart;
 };
 
+// No reusable axios instance
+
 export function AccountDialog({
   open,
   onOpenChange,
@@ -147,13 +150,14 @@ export function AccountDialog({
     },
   });
 
-  // Function to fetch trader data from the backend
+  // Function to fetch trader data from the backend using axios
   const fetchTraderData = async (id: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(
+      // Make direct axios request
+      const response = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/${traderId}`,
         {
           headers: {
@@ -163,14 +167,8 @@ export function AccountDialog({
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to fetch trader information"
-        );
-      }
-
-      const responseData = await response.json();
+      // Axios automatically throws errors for non-2xx responses and parses JSON
+      const responseData = response.data;
 
       if (responseData.status !== "Success" || !responseData.data) {
         throw new Error(responseData.message || "Failed to fetch trader data");
@@ -178,9 +176,15 @@ export function AccountDialog({
 
       return responseData.data;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      setError(errorMessage);
+      // Handle axios error
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        setError(errorMessage);
+      } else {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        setError(errorMessage);
+      }
       throw error;
     } finally {
       setIsLoading(false);

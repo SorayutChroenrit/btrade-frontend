@@ -3,9 +3,7 @@
 import { useState } from "react";
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   KeyRound,
   LogOut,
   Moon,

@@ -136,35 +136,6 @@ export default function CourseDetail() {
     }
   }, [session]);
 
-  // Check if the user is already registered for this course
-  const checkRegistrationStatus = useCallback(async () => {
-    if (!user?.id || !courseId) return;
-
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/check-status`,
-        {
-          params: {
-            userId: user.id,
-            courseId: courseId,
-          },
-          headers: {
-            Authorization: `Bearer ${user.accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const result = response.data;
-      if (result.status === "Success" && result.data) {
-        setIsAlreadyRegistered(result.data.isRegistered || false);
-      }
-    } catch (err) {
-      console.error("Failed to check registration status:", err);
-      // Don't set an error, just assume not registered if the check fails
-    }
-  }, [user, courseId]);
-
   // Calculate registration status message
   const calculateRegistrationStatus = useCallback(() => {
     if (!course) return null;
@@ -213,7 +184,35 @@ export default function CourseDetail() {
     );
   }, [course]);
 
-  // Effect to fetch course details
+  const checkUserRegistration = async (
+    courseId: string,
+    userId: string,
+    accessToken: string
+  ) => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/check-registration`,
+        {
+          params: {
+            courseId,
+            userId,
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return response.data.isRegistered || false;
+    } catch (err) {
+      console.error("Failed to check registration status:", err);
+      // Return false by default if there's an error
+      return false;
+    }
+  };
+
+  // Effect to fetch course details and check registration status
   useEffect(() => {
     // Only fetch course details when session status is determined (authenticated or unauthenticated)
     if (sessionStatus === "loading") {
@@ -241,6 +240,16 @@ export default function CourseDetail() {
 
         if (result.status === "Success" && result.data) {
           setCourse(result.data);
+
+          // Check if the user is already registered for this course (only for authenticated users)
+          if (user?.id && user?.accessToken) {
+            const isRegistered = await checkUserRegistration(
+              courseId,
+              user.id,
+              user.accessToken
+            );
+            setIsAlreadyRegistered(isRegistered);
+          }
         } else {
           throw new Error("Invalid response format from API");
         }
@@ -263,13 +272,6 @@ export default function CourseDetail() {
       fetchCourseDetails();
     }
   }, [courseId, sessionStatus, user]);
-
-  // Effect to check registration status after course is loaded
-  useEffect(() => {
-    if (course && user?.id) {
-      checkRegistrationStatus();
-    }
-  }, [course, user?.id, checkRegistrationStatus]);
 
   // Effect to update registration status message when course changes
   useEffect(() => {

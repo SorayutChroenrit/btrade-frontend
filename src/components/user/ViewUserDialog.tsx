@@ -173,16 +173,17 @@ export function ViewUserTrainingDialog({
     if (!duration) return "N/A";
 
     const parts = [];
-    if (duration.years > 0)
-      parts.push(`${duration.years} year${duration.years !== 1 ? "s" : ""}`);
-    if (duration.months > 0)
-      parts.push(`${duration.months} month${duration.months !== 1 ? "s" : ""}`);
-    if (duration.days > 0)
-      parts.push(`${duration.days} day${duration.days !== 1 ? "s" : ""}`);
+    // Always include years, even if zero
+    parts.push(`${duration.years} year${duration.years !== 1 ? "s" : ""}`);
+
+    // Always include months, even if zero
+    parts.push(`${duration.months} month${duration.months !== 1 ? "s" : ""}`);
+
+    // Always include days, even if zero
+    parts.push(`${duration.days} day${duration.days !== 1 ? "s" : ""}`);
 
     return parts.length > 0 ? parts.join(", ") : "N/A";
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-0">
@@ -343,30 +344,6 @@ export function ViewUserTrainingDialog({
                       </div>
                     </div>
                   )}
-
-                  {(traderData?.durationDisplay ||
-                    traderData?.remainingTimeDisplay) && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium flex items-center gap-2">
-                          <Timer className="h-4 w-4" /> Total Duration
-                        </h3>
-                        <p className="text-gray-700">
-                          {formatDuration(traderData?.durationDisplay)}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium flex items-center gap-2">
-                          <Timer className="h-4 w-4" /> Remaining Time
-                        </h3>
-                        <p className="text-gray-700">
-                          {formatDuration(traderData?.remainingTimeDisplay)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                   {userData.status === "Suspended" && userData.statusReason && (
                     <div className="space-y-2 mt-4 bg-amber-50 p-3 rounded-md border border-amber-200">
                       <h3 className="text-sm font-medium flex items-center gap-2 text-amber-800">

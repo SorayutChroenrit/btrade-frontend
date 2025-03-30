@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import dayjs from "dayjs";
@@ -50,7 +50,7 @@ export function DashbaordRecentSales({
 
   // Format date nicely
   const formatDate = (dateString: string): string => {
-    return dayjs(dateString).format("D MMMM YYYY , HH:mm");
+    return dayjs(dateString).format("HH:mm, D MMMM YYYY");
   };
 
   const columnHelper = createColumnHelper<RecentSale>();
