@@ -37,17 +37,13 @@ pipeline {
         print "Clone Automation Testing Project"
         checkout([
             $class: 'GitSCM',
-            branches: [[name: '*/main']],
+            branches: [[name: '*/master']],
             userRemoteConfigs: [[
                 credentialsId: 'Sorayut',
                 url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
             ]]
         ])
         print "Checkout successful"
-        
-        // Debug: List files to see what's available
-        sh "ls -la"
-        sh "find . -name '*.robot'"
         
         print "Install robotframework"
         sh "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
@@ -58,7 +54,7 @@ pipeline {
         print "Verify Robot Framework installation"
         sh "pip3 show robotframework"
         print "Run Robot Framework Tests"
-        sh "python3 -m robot TS01-Register.robot"  // Specific file instead of wildcard
+        sh "python3 -m robot TS01-Register.robot"  
     }
 }
     }
