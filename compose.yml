@@ -2,9 +2,9 @@ services:
   backend:
     image: 'btradebackend'
     ports:
-      - "20000:3000"
+      - "20000:20000"
     environment:
-      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/
+      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADERR_DB
   
   frontend:
     build: .
