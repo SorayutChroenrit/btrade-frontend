@@ -34,7 +34,21 @@ pipeline {
         
         stage('Testing') {
             steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        credentialsId: 'Sorayut',
+                        url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
+                    ]]
+                ])
+                echo "Checkout successful"
+
                 echo "Jenkins Testing"
+                sh "pip3 install robotframework"
+                sh "pip3 install robotframework-seleniumlibrary"
+                
+                sh "robot --outputdir results tests/"
             }
         }
     }
