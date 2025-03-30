@@ -3,10 +3,8 @@ services:
     image: 'btradebackend'
     ports:
       - "20000:20000"
-    depends_on:
-      - mongodb
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/BONDTRADER_DB
+      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/
   
   frontend:
     build: .
@@ -15,13 +13,3 @@ services:
     depends_on:
       - backend
     restart: on-failure
-  
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-
-volumes:
-  mongodb_data:

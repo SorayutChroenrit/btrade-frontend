@@ -1,10 +1,10 @@
 pipeline {
-    agent { label "robot" }
+    agent any
     stages {
         stage('Clone') {
             steps {
                 script {
-                    echo "Cloning repository..."
+                    print "Cloning repository..."
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: '*/main']],
@@ -13,7 +13,7 @@ pipeline {
                             url: 'https://github.com/SorayutChroenrit/btrader-backend'
                         ]]
                     ])
-                    echo "Checkout successful"
+                    print "Checkout successful"
                 }
             }
         }
@@ -21,12 +21,12 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    echo "Docker Build Image"
+                    print "Docker Build Image"
                     sh "/usr/local/bin/docker pull --disable-content-trust=false node:20-alpine"
                     sh "/usr/local/bin/docker build -t btradefrontend ."
-                    echo "Docker Build Image Success"
+                    print "Docker Build Image Success"
                 }
-                    echo "Docker Image to Running Container"
+                    print "Docker Image to Running Container"
                     sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
                     sh "/usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 btradefrontend:latest"
             }
@@ -34,6 +34,7 @@ pipeline {
         
         stage('Testing') {
             steps {
+                print "Clone Automation Testing Project"
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
@@ -42,15 +43,18 @@ pipeline {
                         url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
                     ]]
                 ])
-                echo "Checkout successful"
+                print "Checkout successful"
 
-                echo "Jenkins installing robotframework"
+                print "Install robotframework"
+                sh "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+                sh "python3 get-pip.py"
                 sh "pip3 install robotframework"
+                print "Install robotframework-seleniumlibrary"
                 sh "pip3 install robotframework-seleniumlibrary"
-                sh "pip3 install webdrivermanager"
-
-
-                sh "python3 -m robot --outputdir results tests/"
+                print "Verify Robot Framework installation"
+                sh "pip3 show robotframework"
+                print "Run Robot Framework Tests"
+                sh "python3 -m robot TS01-Register.robot"
             }
         }
     }
