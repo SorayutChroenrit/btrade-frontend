@@ -28,7 +28,8 @@ pipeline {
                 }
                     print "Docker Image to Running Container"
                     sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
-                    sh "/usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 btradefrontend:latest"
+                    sh "/usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/YOUR_DATABASE_NAME' btradefrontend:latest"
+
             }
         }
         
