@@ -15,7 +15,7 @@ pipeline {
                             branches: [[name: '*/main']],
                             userRemoteConfigs: [[
                                 credentialsId: 'Sorayut',
-                                url: 'https://github.com/SorayutChroenrit/btrader-backend'
+                                url: 'https://github.com/SorayutChroenrit/btrade-backend.git'
                             ]]
                         ])
                         echo "Backend checkout successful"
@@ -31,7 +31,7 @@ pipeline {
                             branches: [[name: '*/main']],
                             userRemoteConfigs: [[
                                 credentialsId: 'Sorayut',
-                                url: 'https://github.com/SorayutChroenrit/btrader-frontend'
+                                url: 'https://github.com/SorayutChroenrit/btrade-frontend.git'
                             ]]
                         ])
                         echo "Frontend checkout successful"
