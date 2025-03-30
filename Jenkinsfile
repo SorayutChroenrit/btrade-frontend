@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label "robot" }
     stages {
         stage('Clone') {
             steps {
@@ -44,11 +44,13 @@ pipeline {
                 ])
                 echo "Checkout successful"
 
-                echo "Jenkins Testing"
+                echo "Jenkins installing robotframework"
                 sh "pip3 install robotframework"
                 sh "pip3 install robotframework-seleniumlibrary"
-                
                 sh "pip3 install webdrivermanager"
+
+
+                sh "python3 -m robot --outputdir results tests/"
             }
         }
     }
