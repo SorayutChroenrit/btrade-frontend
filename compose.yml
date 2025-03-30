@@ -4,7 +4,7 @@ services:
     ports:
       - "20000:20000"
     environment:
-      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADERR_DB
+      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB
   
   frontend:
     build: .
