@@ -48,7 +48,7 @@ pipeline {
                 sh "pip3 install robotframework"
                 sh "pip3 install robotframework-seleniumlibrary"
                 
-                sh "robot --outputdir results tests/"
+                sh "pip3 install webdrivermanager"
             }
         }
     }
