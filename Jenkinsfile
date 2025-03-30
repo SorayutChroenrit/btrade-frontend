@@ -5,7 +5,6 @@ pipeline {
         stage('Clone') {
             steps {
                 script {
-                    // Clone backend repository
                     print "Cloning backend repository..."
                     checkout([
                         $class: 'GitSCM',
@@ -15,32 +14,31 @@ pipeline {
                             url: 'https://github.com/SorayutChroenrit/btrader-backend'
                         ]]
                     ])
+                    print "Backend checkout successful"
                     
-                    // Build and deploy backend
+                    // Build backend image
                     print "Building backend image"
                     sh "/usr/local/bin/docker pull node:20-alpine"
                     sh "/usr/local/bin/docker build -t btradebackend ."
                     print "Backend image built successfully"
                     
-                    // Store backend code
-                    sh "mkdir -p /tmp/build-artifacts"
-                    sh "cp -r . /tmp/build-artifacts/backend"
-                    
-                    // Clone frontend repository
-                    print "Cloning frontend repository..."
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        userRemoteConfigs: [[
-                            credentialsId: 'Sorayut',
-                            url: 'https://github.com/SorayutChroenrit/btrader-frontend'
-                        ]]
-                    ])
-                    
-                    // Build frontend image
-                    print "Building frontend image"
-                    sh "/usr/local/bin/docker build -t btraderfrontend ."
-                    print "Frontend image built successfully"
+                    dir('/tmp') {
+                        // Clone frontend repository directly in tmp directory
+                        print "Cloning frontend repository..."
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            userRemoteConfigs: [[
+                                credentialsId: 'Sorayut',
+                                url: 'https://github.com/SorayutChroenrit/btrader-frontend'
+                            ]]
+                        ])
+                        
+                        // Build frontend image
+                        print "Building frontend image"
+                        sh "/usr/local/bin/docker build -t btraderfrontend ."
+                        print "Frontend image built successfully"
+                    }
                     
                     print "Clone stage completed successfully"
                 }
@@ -69,27 +67,29 @@ pipeline {
         
         stage('Testing') {
             steps {
-                print "Clone Automation Testing Project"
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/master']],
-                    userRemoteConfigs: [[
-                        credentialsId: 'Sorayut',
-                        url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
-                    ]]
-                ])
-                print "Checkout successful"
-                
-                print "Install robotframework"
-                sh "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-                sh "python3 get-pip.py"
-                sh "pip3 install robotframework"
-                print "Install robotframework-seleniumlibrary"
-                sh "pip3 install robotframework-seleniumlibrary"
-                print "Verify Robot Framework installation"
-                sh "pip3 show robotframework"
-                print "Run Robot Framework Tests"
-                sh "python3 -m robot TS01-Register.robot"
+                dir('/tmp/testing') {
+                    print "Clone Automation Testing Project"
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '*/master']],
+                        userRemoteConfigs: [[
+                            credentialsId: 'Sorayut',
+                            url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
+                        ]]
+                    ])
+                    print "Automation testing checkout successful"
+                    
+                    print "Install robotframework"
+                    sh "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+                    sh "python3 get-pip.py"
+                    sh "pip3 install robotframework"
+                    print "Install robotframework-seleniumlibrary"
+                    sh "pip3 install robotframework-seleniumlibrary"
+                    print "Verify Robot Framework installation"
+                    sh "pip3 show robotframework"
+                    print "Run Robot Framework Tests"
+                    sh "python3 -m robot TS01-Register.robot"
+                }
             }
         }
     }
