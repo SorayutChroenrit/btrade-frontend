@@ -127,7 +127,7 @@ export function EditUserDialog({
     };
 
     fetchUserData();
-  }, [open, userId, form]);
+  }, [open, userId, form, user]);
 
   // Handle form submission
   const onSubmit = async (data: UserFormValues) => {
@@ -135,9 +135,9 @@ export function EditUserDialog({
     setError(null);
 
     try {
-      // Update user data (just email)
+      // Update user data - now matching the backend API structure
       await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user/update-user`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/user`,
         {
           _id: userId,
           email: data.email,
@@ -150,27 +150,24 @@ export function EditUserDialog({
         }
       );
 
+      // Update trader data if traderId exists
       if (traderId) {
-        try {
-          await axios.put(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader/update-profile`,
-            {
-              traderId,
-              email: data.email,
-              company: data.company,
-              idCard: data.idCard,
-              phoneNumber: data.phoneNumber,
+        await axios.put(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader`,
+          {
+            traderId, // Backend expects traderId field
+            email: data.email,
+            company: data.company,
+            idCard: data.idCard,
+            phoneNumber: data.phoneNumber,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${user?.accessToken}`,
+              "Content-Type": "application/json",
             },
-            {
-              headers: {
-                Authorization: `Bearer ${user?.accessToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-        } catch (err) {
-          console.log("Error updating trader profile:", err);
-        }
+          }
+        );
       }
 
       // Show success message
