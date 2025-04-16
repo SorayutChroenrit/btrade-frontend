@@ -1,19 +1,6 @@
 pipeline {
     agent any
     stages {
-        stage('Setup Docker') {
-            steps {
-                script {
-                    // Configure Docker credentials for macOS
-                    sh "mkdir -p ~/.docker"
-                    sh "echo '{\"credsStore\":\"desktop\"}' > ~/.docker/config.json"
-                    
-                    // Pull base images to avoid credential issues during build
-                    sh "/usr/local/bin/docker pull node:20"
-                }
-            }
-        }
-        
         stage('Clone') {
             steps {
                 // Create working directories
