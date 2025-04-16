@@ -45,7 +45,6 @@ pipeline {
                 dir('btrader-backend') {
                     script {
                         echo "Building backend Docker image"
-                        sh "/usr/local/bin/docker pull --disable-content-trust=false node:20-alpine"
                         sh "/usr/local/bin/docker build -t btradebackend ."
                         
                         echo "Deploying backend container"
