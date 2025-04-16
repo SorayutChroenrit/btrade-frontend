@@ -44,9 +44,15 @@ pipeline {
             steps {
                 dir('btrader-backend') {
                     script {
+                        echo "Modifying backend Dockerfile to use docker.io/library/node:20 explicitly"
+                        sh '''
+                        sed -i '1s|FROM node:20|FROM docker.io/library/node:20|' Dockerfile
+                        cat Dockerfile
+                        '''
+                        
                         echo "Building backend Docker image"
-                        sh "/usr/local/bin/docker pull --disable-content-trust=false node:20-alpine"
-                        sh "/usr/local/bin/docker build -t btradebackend ."
+                        // Use buildkit disabled
+                        sh "DOCKER_BUILDKIT=0 /usr/local/bin/docker build --network=host -t btradebackend ."
                         
                         echo "Deploying backend container"
                         sh "/usr/local/bin/docker rm -f btradebackend-run || true"
@@ -62,8 +68,15 @@ pipeline {
             steps {
                 dir('btrader-frontend') {
                     script {
+                        echo "Modifying frontend Dockerfile to use docker.io/library/node:20-alpine explicitly"
+                        sh '''
+                        sed -i '1s|FROM node:20-alpine|FROM docker.io/library/node:20-alpine|' Dockerfile
+                        cat Dockerfile
+                        '''
+                        
                         echo "Building frontend Docker image"
-                        sh "/usr/local/bin/docker build -t btradefrontend ."
+                        // Use buildkit disabled
+                        sh "DOCKER_BUILDKIT=0 /usr/local/bin/docker build --network=host -t btradefrontend ."
                         
                         echo "Deploying frontend container"
                         sh "/usr/local/bin/docker rm -f btradefrontend-run || true"

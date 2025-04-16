@@ -155,7 +155,7 @@ export function EditUserDialog({
         await axios.put(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/trader`,
           {
-            traderId, // Backend expects traderId field
+            traderId,
             email: data.email,
             company: data.company,
             idCard: data.idCard,
