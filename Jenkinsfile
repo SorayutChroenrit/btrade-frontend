@@ -3,7 +3,6 @@ pipeline {
     stages {
         stage('Clone') {
             steps {
-                // Create working directories
                 sh "mkdir -p btrader-backend btrader-frontend"
                 
                 // Clone backend repository
