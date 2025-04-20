@@ -49,7 +49,7 @@ pipeline {
                         
                         echo "Deploying backend container"
                         sh "/usr/local/bin/docker rm -f btradebackend-run || true"
-                        sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB?retryWrites=true&w=majority' btradebackend:latest"
+                        sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtrader.19ssbfs.mongodb.net/?retryWrites=true&w=majority&appName=BONDTRADER' btradebackend:latest"
                         echo "Backend deployment successful"
                     }
                 }
