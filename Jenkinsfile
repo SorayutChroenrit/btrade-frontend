@@ -108,9 +108,11 @@ pipeline {
                     sh "pip3 show robotframework"
                     print "Run Robot Framework Tests"
                     print "TS01-REGISTER"
-                    // sh "python3 -m robot TS01-Register.robot"
+                    sh "python3 -m robot TS01-Register.robot"
                     print "TS02-LOGIN"
                     sh "python3 -m robot TS02-Login.robot"
+                    print "TS03-LOGOUT"
+                    sh "python3 -m robot TS03-Logout.robot"
                 }
             }
         }
