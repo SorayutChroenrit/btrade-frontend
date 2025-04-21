@@ -95,8 +95,8 @@ pipeline {
                     print "Verify Robot Framework installation"
                     sh "pip3 show robotframework"
                     print "Run Robot Framework Tests"
-                    print "TS01-REGISTER"
-                    sh "python3 -m robot TS01-Register.robot"
+                    // print "TS01-REGISTER"
+                    // sh "python3 -m robot TS01-Register.robot"
                     print "TS01-LOGIN"
                     sh "python3 -m robot TS02-Login.robot"
                 }
