@@ -38,7 +38,7 @@ pipeline {
                     }
                 }
                 
-                // Create Docker network without a separate stage
+                // Create Docker network
                 script {
                     echo "Creating Docker network for application"
                     sh "/usr/local/bin/docker network create btrader-net || true"
@@ -50,13 +50,20 @@ pipeline {
             steps {
                 dir('btrader-backend') {
                     script {
-                        echo "Building backend Docker image"
-                        sh "/usr/local/bin/docker build -t btradebackend ."
-                        
-                        echo "Deploying backend container"
-                        sh "/usr/local/bin/docker rm -f btradebackend-run || true"
-                        sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --network btrader-net --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtrader.19ssbfs.mongodb.net/BONDTRADER_DB?retryWrites=true&w=majority' btradebackend:latest"
-                        echo "Backend deployment successful"
+                        try {
+                            echo "Clean up any old backend containers and images"
+                            sh "/usr/local/bin/docker rm -f btradebackend-run || true"
+                            
+                            echo "Building backend Docker image"
+                            sh "/usr/local/bin/docker build -t btradebackend ."
+                            
+                            echo "Deploying backend container"
+                            sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --network btrader-net --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtrader.19ssbfs.mongodb.net/BONDTRADER_DB?retryWrites=true&w=majority' btradebackend:latest"
+                            echo "Backend deployment successful"
+                        } catch (Exception e) {
+                            echo "Backend build/deployment failed: ${e.message}"
+                            throw e
+                        }
                     }
                 }
             }
@@ -66,20 +73,27 @@ pipeline {
             steps {
                 dir('btrader-frontend') {
                     script {
-                        echo "Building frontend Docker image"
-                        sh "/usr/local/bin/docker build -t btradefrontend ."
-                        
-                        echo "Deploying frontend container"
-                        sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
-                        sh '''
-                            /usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --network btrader-net \
-                            -e NEXT_PUBLIC_BACKEND_URL='http://btradebackend-run:20000' \
-                            -e NEXTAUTH_URL='http://localhost:3000' \
-                            -e NEXTAUTH_SECRET='BOND_FRONT_SECRET' \
-                            btradefrontend:latest
-                        '''
-                        
-                        echo "Frontend deployment successful"
+                        try {
+                            echo "Clean up any old frontend containers and images"
+                            sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
+                            
+                            echo "Building frontend Docker image with BuildKit enabled"
+                            sh "DOCKER_BUILDKIT=1 /usr/local/bin/docker build -t btradefrontend ."
+                            
+                            echo "Deploying frontend container"
+                            sh '''
+                                /usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --network btrader-net \
+                                -e NEXT_PUBLIC_BACKEND_URL='http://btradebackend-run:20000' \
+                                -e NEXTAUTH_URL='http://localhost:3000' \
+                                -e NEXTAUTH_SECRET='BOND_FRONT_SECRET' \
+                                btradefrontend:latest
+                            '''
+                            
+                            echo "Frontend deployment successful"
+                        } catch (Exception e) {
+                            echo "Frontend build/deployment failed: ${e.message}"
+                            throw e
+                        }
                     }
                 }
             }
@@ -88,33 +102,53 @@ pipeline {
         stage('Testing') {
             steps {
                 dir('/tmp/testing') {
-                    print "Clone Automation Testing Project"
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: '*/master']],
-                        userRemoteConfigs: [[
-                            credentialsId: 'Sorayut',
-                            url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
-                        ]]
-                    ])
-                    print "Automation testing checkout successful"
-                    print "Install robotframework"
-                    sh "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-                    sh "python3 get-pip.py"
-                    sh "pip3 install robotframework"
-                    print "Install robotframework-seleniumlibrary"
-                    sh "pip3 install robotframework-seleniumlibrary"
-                    print "Verify Robot Framework installation"
-                    sh "pip3 show robotframework"
-                    print "Run Robot Framework Tests"
-                    print "TS01-REGISTER"
-                    sh "python3 -m robot TS01-Register.robot"
-                    print "TS02-LOGIN"
-                    sh "python3 -m robot TS02-Login.robot"
-                    print "TS03-LOGOUT"
-                    sh "python3 -m robot TS03-Logout.robot"
+                    script {
+                        try {
+                            print "Clone Automation Testing Project"
+                            checkout([
+                                $class: 'GitSCM',
+                                branches: [[name: '*/master']],
+                                userRemoteConfigs: [[
+                                    credentialsId: 'Sorayut',
+                                    url: 'https://github.com/SorayutChroenrit/Robotframework-Automation.git'
+                                ]]
+                            ])
+                            print "Automation testing checkout successful"
+                            print "Install robotframework"
+                            sh "curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+                            sh "python3 get-pip.py"
+                            sh "pip3 install robotframework"
+                            print "Install robotframework-seleniumlibrary"
+                            sh "pip3 install robotframework-seleniumlibrary"
+                            print "Verify Robot Framework installation"
+                            sh "pip3 show robotframework"
+                            print "Run Robot Framework Tests"
+                            print "TS01-REGISTER"
+                            sh "python3 -m robot TS01-Register.robot"
+                            print "TS02-LOGIN"
+                            sh "python3 -m robot TS02-Login.robot"
+                            print "TS03-LOGOUT"
+                            sh "python3 -m robot TS03-Logout.robot"
+                        } catch (Exception e) {
+                            echo "Testing failed: ${e.message}"
+                            throw e
+                        }
+                    }
                 }
             }
+        }
+    }
+    
+    post {
+        always {
+            echo "Cleaning workspace"
+            cleanWs()
+        }
+        failure {
+            echo "Pipeline failed! Check logs for details."
+        }
+        success {
+            echo "Pipeline completed successfully!"
         }
     }
 }
