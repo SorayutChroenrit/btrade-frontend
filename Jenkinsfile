@@ -65,7 +65,13 @@ pipeline {
                         
                         echo "Deploying frontend container"
                         sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
-                        sh "/usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --link btradebackend-run:backend btradefrontend:latest"
+                        sh '''
+                            /usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --link btradebackend-run:backend \
+                            -e NEXT_PUBLIC_BACKEND_URL='http://localhost:20000' \
+                            -e NEXTAUTH_URL='http://localhost:3000' \
+                            -e NEXTAUTH_SECRET='BOND_FRONT_SECRET' \
+                            btradefrontend:latest
+                        '''
                         
                         echo "Frontend deployment successful"
                     }
