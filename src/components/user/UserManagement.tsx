@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { columns as baseColumns } from "@/components/user/UserColumns";
 import { Button } from "@/components/ui/button";
+import { columns as baseColumns } from "@/components/user/UserColumns";
 import { DataTable } from "@/components/ui/data-table";
 import { PlusCircle, MoreHorizontal } from "lucide-react";
 import axios from "axios";
@@ -20,61 +20,8 @@ import { CreateUserDialog } from "./CreateUserForm";
 import { ViewUserTrainingDialog } from "./ViewUserDialog";
 import { EditUserDialog } from "./EditUserDialog";
 import { useSession } from "next-auth/react";
-
-interface UserData {
-  _id: string;
-  email: string;
-  role: "admin" | "user";
-  status: string;
-  statusReason?: string;
-  lastStatusUpdate?: Date;
-  lastLogin?: Date | null;
-  statusHistory?: {
-    status: string;
-    reason: string;
-    updatedAt: Date;
-    updatedBy: string;
-  }[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface TrainingData {
-  courseId: string;
-  courseName: string;
-  description: string;
-  location?: string;
-  hours: number;
-  date: Date;
-  imageUrl: string;
-  isCompleted: boolean;
-}
-
-interface TraderData {
-  _id: string;
-  userId: string;
-  company: string;
-  name: string;
-  idCard: string;
-  email: string;
-  phoneNumber: string;
-  startDate?: Date;
-  endDate?: Date;
-  durationDisplay?: {
-    years: number;
-    months: number;
-    days: number;
-  };
-  remainingTimeDisplay?: {
-    years: number;
-    months: number;
-    days: number;
-  };
-  trainings: TrainingData[];
-  isDeleted: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { ColumnDef } from "@tanstack/react-table";
+import { UserData } from "@/lib/types";
 
 export default function AdminUsers() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -157,7 +104,7 @@ export default function AdminUsers() {
   };
 
   // Create a custom "actions" column with view/edit functionality
-  const actionsColumn = {
+  const actionsColumn: ColumnDef<UserData> = {
     id: "actions",
     cell: ({ row }) => {
       const user = row.original;
@@ -165,7 +112,7 @@ export default function AdminUsers() {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="hero" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -189,7 +136,7 @@ export default function AdminUsers() {
   };
 
   // Replace the existing actions column with this one
-  const columnsWithEdit = baseColumns.filter((col) => col.id !== "actions");
+  const columnsWithEdit = baseColumns({ refetch });
   columnsWithEdit.push(actionsColumn);
 
   if (isLoading) {

@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { columns as baseColumns } from "@/components/course/CourseColumns";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { PlusCircle, MoreHorizontal } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Ticket } from "lucide-react";
 import axios from "axios";
 import { Spinner } from "../ui/spinner";
 import {
@@ -31,15 +31,34 @@ import { ViewCourseDialog } from "./ViewCourseDialog";
 import { EditCourseForm } from "./EditCourseForm";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { ColumnDef } from "@tanstack/react-table";
+
+interface CourseData {
+  _id: string;
+  name: string;
+  courseName: string;
+  courseCode: string;
+  description: string;
+  startDate: Date;
+  endDate: Date;
+  courseDate: Date;
+  location: string;
+  price: number;
+  hours: number;
+  maxSeats: number;
+  availableSeats: number;
+  courseTags: string[];
+  imageUrl?: string;
+}
 
 export default function AdminCourses() {
   const { data: session } = useSession();
   const user = session?.user;
   const queryClient = useQueryClient();
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState<CourseData | null>(null);
   const [open, setOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
-  const [viewCourse, setViewCourse] = useState(null);
+  const [viewCourse, setViewCourse] = useState<CourseData | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -47,13 +66,24 @@ export default function AdminCourses() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
 
+  // State for code generation dialog
+  const [showCodeDialog, setShowCodeDialog] = useState(false);
+  const [courseForCode, setCourseForCode] = useState<CourseData | null>(null);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [codeValidUntil, setCodeValidUntil] = useState<string | null>(null);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+
   // Fetch function that will be used by React Query
-  const fetchCourses = async () => {
+  const fetchCourses = async (): Promise<CourseData[]> => {
+    if (!user?.accessToken) {
+      return [];
+    }
+
     const response = await axios.get(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/course`,
       {
         headers: {
-          Authorization: `Bearer ${user?.accessToken}`,
+          Authorization: `Bearer ${user.accessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -65,7 +95,57 @@ export default function AdminCourses() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["courses"],
     queryFn: fetchCourses,
+    enabled: !!user?.accessToken,
   });
+
+  // Function to generate enrollment code
+  const handleGenerateCode = (course: CourseData) => {
+    setCourseForCode(course);
+    setGeneratedCode(null);
+    setCodeValidUntil(null);
+    setShowCodeDialog(true);
+  };
+
+  // Function to confirm code generation
+  const confirmGenerateCode = async () => {
+    if (!courseForCode || !user?.accessToken) return;
+
+    setIsGeneratingCode(true);
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/enrollment/generateCode`,
+        { courseId: courseForCode._id },
+        {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const { courseCode, validUntil } = response.data.data;
+      setGeneratedCode(courseCode);
+      setCodeValidUntil(validUntil);
+      toast.success("Enrollment code generated successfully");
+    } catch (error: any) {
+      console.error("Error generating code:", error);
+      if (error.response?.data?.message) {
+        // If there's an existing code, display it
+        if (
+          error.response.data.code === "Error-01-0006" &&
+          error.response.data.data?.existingCode
+        ) {
+          setGeneratedCode(error.response.data.data.existingCode);
+          toast.info(error.response.data.message);
+        } else {
+          toast.error(error.response.data.message);
+        }
+      } else {
+        toast.error("Failed to generate enrollment code. Please try again.");
+      }
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
 
   // Function to show the delete confirmation dialog
   const confirmDelete = (courseId: string) => {
@@ -75,8 +155,8 @@ export default function AdminCourses() {
 
   // Function to perform the actual deletion
   const deleteCourse = async () => {
-    if (!courseToDelete) {
-      console.error("Course ID is required for deletion");
+    if (!courseToDelete || !user?.accessToken) {
+      console.error("Course ID or access token is required");
       return;
     }
 
@@ -91,7 +171,7 @@ export default function AdminCourses() {
         requestPayload,
         {
           headers: {
-            Authorization: `Bearer ${user?.accessToken}`,
+            Authorization: `Bearer ${user.accessToken}`,
             "Content-Type": "application/json",
           },
         }
@@ -114,7 +194,7 @@ export default function AdminCourses() {
   };
 
   // Handle opening the form for editing
-  const handleEditCourse = (id: any) => {
+  const handleEditCourse = (id: string) => {
     setSelectedCourseId(id);
     setIsEditOpen(true);
   };
@@ -128,13 +208,13 @@ export default function AdminCourses() {
   };
 
   // Handle viewing course details
-  const handleViewCourse = (course: any) => {
+  const handleViewCourse = (course: CourseData) => {
     setViewCourse(course);
     setViewOpen(true);
   };
 
   // Create a custom "actions" column with edit functionality
-  const actionsColumn = {
+  const actionsColumn: ColumnDef<CourseData, unknown> = {
     id: "actions",
     cell: ({ row }) => {
       const course = row.original;
@@ -155,6 +235,9 @@ export default function AdminCourses() {
             <DropdownMenuItem onClick={() => handleEditCourse(course._id)}>
               Edit Course
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleGenerateCode(course)}>
+              Generate Enrollment Code
+            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-600"
               onClick={() => confirmDelete(course._id)}
@@ -168,8 +251,10 @@ export default function AdminCourses() {
   };
 
   // Replace the existing actions column with our custom one
-  const columnsWithEdit = baseColumns.filter((col) => col.id !== "actions");
-  columnsWithEdit.push(actionsColumn);
+  const columnsWithEdit = [
+    ...baseColumns.filter((col) => col.id !== "actions"),
+    actionsColumn,
+  ];
 
   if (isLoading) {
     return (
@@ -194,7 +279,7 @@ export default function AdminCourses() {
 
   return (
     <div className="container mx-auto">
-      <div className="flex items-center justify-end ">
+      <div className="flex items-center justify-end">
         <Button
           onClick={() => {
             setSelectedCourse(null);
@@ -214,7 +299,7 @@ export default function AdminCourses() {
         course={viewCourse}
         onEdit={() => {
           setViewOpen(false);
-          handleEditCourse(viewCourse);
+          if (viewCourse) handleEditCourse(viewCourse._id);
         }}
       />
       <CreateCourseForm
@@ -245,6 +330,72 @@ export default function AdminCourses() {
             >
               Delete
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Generate Code Dialog */}
+      <AlertDialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Ticket className="h-5 w-5" />
+              Generate Enrollment Code
+            </AlertDialogTitle>
+
+            {/* Course info moved outside AlertDialogDescription */}
+            {courseForCode && (
+              <div className="mb-4">
+                <div className="font-semibold">
+                  {courseForCode.name || courseForCode.courseName}
+                </div>
+                <div className="text-sm text-gray-500">
+                  Date:{" "}
+                  {new Date(courseForCode.courseDate).toLocaleDateString()}
+                </div>
+              </div>
+            )}
+
+            {/* Remove the redundant AlertDialogDescription entirely */}
+
+            {/* Single description section */}
+            {generatedCode ? (
+              <div className="mt-4 bg-gray-100 p-4 rounded-md">
+                <div className="text-sm text-gray-500 mb-1">
+                  Enrollment Code:
+                </div>
+                <div className="text-2xl font-bold text-center">
+                  {generatedCode}
+                </div>
+                {codeValidUntil && (
+                  <div className="text-xs text-gray-500 text-center mt-2">
+                    Valid until: {codeValidUntil}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-2 text-sm text-gray-500">
+                Generate a unique enrollment code for this course. This code can
+                be shared with students to enroll in the course.
+              </div>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            {!generatedCode && !isGeneratingCode && (
+              <AlertDialogAction
+                onClick={confirmGenerateCode}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Generate Code
+              </AlertDialogAction>
+            )}
+            {isGeneratingCode && (
+              <Button disabled className="bg-blue-600">
+                <Spinner size="small" color="white" className="mr-2" />
+                Generating...
+              </Button>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

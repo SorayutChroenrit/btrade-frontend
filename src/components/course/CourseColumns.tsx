@@ -14,6 +14,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DataTableColumnHeader } from "../general/ColumnsHeader";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // Define the Course type based on your MongoDB schema
 export type Course = {
@@ -32,6 +37,7 @@ export type Course = {
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
+  courseDate: string;
 };
 
 export const columns: ColumnDef<Course>[] = [
@@ -68,10 +74,14 @@ export const columns: ColumnDef<Course>[] = [
     },
   },
   {
-    accessorKey: "hours",
+    id: "courseDate",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Hours" />
+      <DataTableColumnHeader column={column} title="Course Date" />
     ),
+    cell: ({ row }) => {
+      const courseDate = row.original.courseDate;
+      return dayjs(courseDate).tz("Asia/Bangkok").format("HH:mm, D MMM YYYY");
+    },
   },
   {
     accessorKey: "availableSeats",
