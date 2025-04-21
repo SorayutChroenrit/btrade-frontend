@@ -37,6 +37,12 @@ pipeline {
                         echo "Frontend checkout successful"
                     }
                 }
+                
+                // Create Docker network without a separate stage
+                script {
+                    echo "Creating Docker network for application"
+                    sh "/usr/local/bin/docker network create btrader-net || true"
+                }
             }
         }
         
@@ -49,7 +55,7 @@ pipeline {
                         
                         echo "Deploying backend container"
                         sh "/usr/local/bin/docker rm -f btradebackend-run || true"
-                        sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtrader.19ssbfs.mongodb.net/?retryWrites=true&w=majority&appName=BONDTRADER' btradebackend:latest"
+                        sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --network btrader-net --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtrader.19ssbfs.mongodb.net/?retryWrites=true&w=majority&appName=BONDTRADER' btradebackend:latest"
                         echo "Backend deployment successful"
                     }
                 }
@@ -66,8 +72,8 @@ pipeline {
                         echo "Deploying frontend container"
                         sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
                         sh '''
-                            /usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --link btradebackend-run:backend \
-                            -e NEXT_PUBLIC_BACKEND_URL='http://localhost:20000' \
+                            /usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --network btrader-net \
+                            -e NEXT_PUBLIC_BACKEND_URL='http://btradebackend-run:20000' \
                             -e NEXTAUTH_URL='http://localhost:3000' \
                             -e NEXTAUTH_SECRET='BOND_FRONT_SECRET' \
                             btradefrontend:latest
