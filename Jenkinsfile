@@ -109,7 +109,7 @@ pipeline {
                     print "Run Robot Framework Tests"
                     print "TS01-REGISTER"
                     // sh "python3 -m robot TS01-Register.robot"
-                    print "TS01-LOGIN"
+                    print "TS02-LOGIN"
                     sh "python3 -m robot TS02-Login.robot"
                 }
             }
