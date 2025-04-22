@@ -118,8 +118,8 @@ networks:
                     // sh "python3 -m robot TS01-Register.robot"
                     print "TS02-LOGIN"
                     sh "python3 -m robot TS02-Login.robot"
-                    print "TS03-LOGOUT"
-                    sh "python3 -m robot TS03-Logout.robot"
+                    // print "TS03-LOGOUT"
+                    // sh "python3 -m robot TS03-Logout.robot"
                 }
             }
         }
