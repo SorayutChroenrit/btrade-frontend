@@ -46,7 +46,7 @@ services:
     ports:
       - "20000:20000"
     environment:
-      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB?retryWrites=true&w=majority
+      - MONGODB_URI=mongodb://sorayutchroenrit:ZUwGGkFh0ikC9CWx@ac-reiuhge-shard-00-00.i6rc0pn.mongodb.net:27017,ac-reiuhge-shard-00-01.i6rc0pn.mongodb.net:27017,ac-reiuhge-shard-00-02.i6rc0pn.mongodb.net:27017/BONDTRADER_DB?ssl=true&replicaSet=atlas-zk0q9d-shard-0&authSource=admin&retryWrites=true&w=majority
       - MONGODB_CONNECT_TIMEOUT_MS=30000
     dns:
       - 8.8.8.8
