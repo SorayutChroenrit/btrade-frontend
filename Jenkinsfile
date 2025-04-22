@@ -42,20 +42,24 @@ pipeline {
 services:
   backend:
     image: 'btradebackend'
-    container_name: btradebackend-run
+    container_name: btradebackend-run-${BUILD_NUMBER:-1}
     ports:
       - "20000:20000"
     environment:
-      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB
+      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB?retryWrites=true&w=majority
+      - MONGODB_CONNECT_TIMEOUT_MS=30000
     dns:
       - 8.8.8.8
       - 8.8.4.4
+    restart: always
     networks:
       - btrader-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     build: .
-    container_name: btradefrontend-run
+    container_name: btradefrontend-run-${BUILD_NUMBER:-1}
     ports:
       - "3000:3000"
     environment:
@@ -64,12 +68,13 @@ services:
       - NEXTAUTH_SECRET=BOND_FRONT_SECRET
     depends_on:
       - backend
-    restart: on-failure
+    restart: always
     networks:
       - btrader-network
 
 networks:
   btrader-network:
+    name: btrader-network-${BUILD_NUMBER:-1}
     driver: bridge
 '''
             }
@@ -79,8 +84,13 @@ networks:
             steps {
                 script {
                     echo "Building and deploying with Docker Compose"
-                    // Stop and remove existing containers if they exist
-                    sh "/usr/local/bin/docker-compose down || true"
+                    // Stop and remove any existing containers that might conflict
+                    sh "docker ps -q --filter 'name=btradebackend-run' | xargs -r docker rm -f || true"
+                    sh "docker ps -q --filter 'name=btradefrontend-run' | xargs -r docker rm -f || true"
+                    
+                    // Build backend image if needed
+                    sh "/usr/local/bin/docker build -t btradebackend ./btrader-backend || true"
+                    
                     // Build and start containers
                     sh "/usr/local/bin/docker-compose up -d --build"
                     echo "Deployment successful"
