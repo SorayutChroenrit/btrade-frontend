@@ -2,15 +2,17 @@ version: '3'
 
 services:
   backend:
-    image: 'btradebackend'
+    build: 
+      context: ./btrader-backend
+      dockerfile: Dockerfile
     container_name: btradebackend-run
     ports:
       - "20000:20000"
     environment:
-      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+      - MONGODB_URI=mongodb://host.docker.internal:27017/BONDTRADER_DB
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
     networks:
       - btrader-network
 
@@ -25,7 +27,7 @@ services:
       - NEXTAUTH_SECRET=BOND_FRONT_SECRET
     depends_on:
       - backend
-    restart: on-failure
+    restart: always
     networks:
       - btrader-network
 

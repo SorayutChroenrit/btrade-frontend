@@ -4,7 +4,7 @@ pipeline {
         stage('Clone') {
             steps {
                 // Create working directories
-                sh "mkdir -p btrader-backend btrader-frontend"
+                sh "mkdir -p btrader-backend"
                 
                 // Clone backend repository
                 dir('btrader-backend') {
@@ -41,25 +41,23 @@ pipeline {
 
 services:
   backend:
-    image: 'btradebackend'
-    container_name: btradebackend-run-${BUILD_NUMBER:-1}
+    build: 
+      context: ./btrader-backend
+      dockerfile: Dockerfile
+    container_name: btradebackend-run
     ports:
       - "20000:20000"
     environment:
-      - MONGODB_URI=mongodb://sorayutchroenrit:ZUwGGkFh0ikC9CWx@ac-reiuhge-shard-00-00.i6rc0pn.mongodb.net:27017,ac-reiuhge-shard-00-01.i6rc0pn.mongodb.net:27017,ac-reiuhge-shard-00-02.i6rc0pn.mongodb.net:27017/BONDTRADER_DB?ssl=true&replicaSet=atlas-zk0q9d-shard-0&authSource=admin&retryWrites=true&w=majority
-      - MONGODB_CONNECT_TIMEOUT_MS=30000
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
+      - MONGODB_URI=mongodb://host.docker.internal:27017/BONDTRADER_DB
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always
     networks:
       - btrader-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   frontend:
     build: .
-    container_name: btradefrontend-run-${BUILD_NUMBER:-1}
+    container_name: btradefrontend-run
     ports:
       - "3000:3000"
     environment:
@@ -74,7 +72,6 @@ services:
 
 networks:
   btrader-network:
-    name: btrader-network-${BUILD_NUMBER:-1}
     driver: bridge
 '''
             }
@@ -87,9 +84,6 @@ networks:
                     // Stop and remove any existing containers that might conflict
                     sh "docker ps -q --filter 'name=btradebackend-run' | xargs -r docker rm -f || true"
                     sh "docker ps -q --filter 'name=btradefrontend-run' | xargs -r docker rm -f || true"
-                    
-                    // Build backend image if needed
-                    sh "/usr/local/bin/docker build -t btradebackend ./btrader-backend || true"
                     
                     // Build and start containers
                     sh "/usr/local/bin/docker-compose up -d --build"
