@@ -23,58 +23,67 @@ pipeline {
                 }
                 
                 // Clone frontend repository
-                dir('btrader-frontend') {
-                    script {
-                        echo "Cloning frontend repository..."
-                        checkout([
-                            $class: 'GitSCM',
-                            branches: [[name: '*/main']],
-                            userRemoteConfigs: [[
-                                credentialsId: 'Sorayut',
-                                url: 'https://github.com/SorayutChroenrit/btrade-frontend.git'
-                            ]]
-                        ])
-                        echo "Frontend checkout successful"
-                    }
+                script {
+                    echo "Cloning frontend repository..."
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '*/main']],
+                        userRemoteConfigs: [[
+                            credentialsId: 'Sorayut',
+                            url: 'https://github.com/SorayutChroenrit/btrade-frontend.git'
+                        ]]
+                    ])
+                    echo "Frontend checkout successful"
                 }
+                
+                // Create docker-compose.yml file
+                writeFile file: 'docker-compose.yml', text: '''version: '3'
+
+services:
+  backend:
+    image: 'btradebackend'
+    container_name: btradebackend-run
+    ports:
+      - "20000:20000"
+    environment:
+      - MONGODB_URI=mongodb+srv://sorayutchroenrit:ZUwGGkFh0ikC9CWx@bondtraderdb.i6rc0pn.mongodb.net/BONDTRADER_DB
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - btrader-network
+
+  frontend:
+    build: .
+    container_name: btradefrontend-run
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:20000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=BOND_FRONT_SECRET
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - btrader-network
+
+networks:
+  btrader-network:
+    driver: bridge
+'''
             }
         }
         
-        stage('Build & Deploy Backend') {
+        stage('Build & Deploy') {
             steps {
-                dir('btrader-backend') {
-                    script {
-                        echo "Building backend Docker image"
-                        sh "/usr/local/bin/docker build -t btradebackend ."
-                        
-                        echo "Deploying backend container"
-                        sh "/usr/local/bin/docker rm -f btradebackend-run || true"
-                        sh "/usr/local/bin/docker run -d --name btradebackend-run -p 20000:20000 --dns 8.8.8.8 --dns 8.8.4.4 -e MONGODB_URI='mongodb+srv://sorayutchroenrit:xTuSgmcwPhsGHotw@bondtrader.19ssbfs.mongodb.net/BONDTRADER_DB?retryWrites=true&w=majority' btradebackend:latest"
-                        echo "Backend deployment successful"
-                    }
-                }
-            }
-        }
-        
-        stage('Build & Deploy Frontend') {
-            steps {
-                dir('btrader-frontend') {
-                    script {
-                        echo "Building frontend Docker image"
-                        sh "/usr/local/bin/docker build -t btradefrontend ."
-                        
-                        echo "Deploying frontend container"
-                        sh "/usr/local/bin/docker rm -f btradefrontend-run || true"
-                        sh '''
-                            /usr/local/bin/docker run -d --name btradefrontend-run -p 3000:3000 --link btradebackend-run:btradebackend \
-                            -e NEXT_PUBLIC_BACKEND_URL='http://btradebackend:20000' \
-                            -e NEXTAUTH_URL='http://localhost:3000' \
-                            -e NEXTAUTH_SECRET='BOND_FRONT_SECRET' \
-                            btradefrontend:latest
-                        '''
-                        
-                        echo "Frontend deployment successful"
-                    }
+                script {
+                    echo "Building and deploying with Docker Compose"
+                    // Stop and remove existing containers if they exist
+                    sh "/usr/local/bin/docker-compose down || true"
+                    // Build and start containers
+                    sh "/usr/local/bin/docker-compose up -d --build"
+                    echo "Deployment successful"
                 }
             }
         }
