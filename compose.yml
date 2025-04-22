@@ -1,37 +1,37 @@
-  version: '3'
+version: '3'
 
-  services:
-    backend:
-      build: 
-        context: ./btrader-backend
-        dockerfile: Dockerfile
-      container_name: btradebackend-run
-      ports:
-        - "20000:20000"
-      environment:
-        - MONGODB_URI=mongodb://host.docker.internal:27017/BONDTRADER_DB
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-      restart: always
-      networks:
-        - btrader-network
+services:
+  backend:
+    build: 
+      context: ./btrader-backend
+      dockerfile: Dockerfile
+    container_name: btradebackend-run
+    ports:
+      - "20000:20000"
+    environment:
+      - MONGODB_URI=mongodb://host.docker.internal:27017/BONDTRADER_DB
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    networks:
+      - btrader-network
 
-    frontend:
-      build: .
-      container_name: btradefrontend-run
-      ports:
-        - "3000:3000"
-      environment:
-        - SERVER_BACKEND_URL=http://backend:20000
-        - NEXT_PUBLIC_BROWSER_BACKEND_URL=http://localhost:20000
-        - NEXTAUTH_URL=http://localhost:3000
-        - NEXTAUTH_SECRET=BOND_FRONT_SECRET
-      depends_on:
-        - backend
-      restart: always
-      networks:
-        - btrader-network
+  frontend:
+    build: .
+    container_name: btradefrontend-run
+    ports:
+      - "3000:3000"
+    environment:
+      - SERVER_BACKEND_URL=http://backend:20000
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:20000 
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=BOND_FRONT_SECRET
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - btrader-network
 
-  networks:
-    btrader-network:
-      driver: bridge
+networks:
+  btrader-network:
+    driver: bridge
