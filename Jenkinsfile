@@ -36,45 +36,7 @@ pipeline {
                     echo "Frontend checkout successful"
                 }
                 
-                // Create docker-compose.yml file
-                writeFile file: 'docker-compose.yml', text: '''version: '3'
-
-services:
-  backend:
-    build: 
-      context: ./btrader-backend
-      dockerfile: Dockerfile
-    container_name: btradebackend-run
-    ports:
-      - "20000:20000"
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/BONDTRADER_DB
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: always
-    networks:
-      - btrader-network
-
-  frontend:
-    build: .
-    container_name: btradefrontend-run
-    ports:
-      - "3000:3000"
-    environment:
-      - SERVER_BACKEND_URL=http://backend:20000
-      - NEXT_PUBLIC_BACKEND_URL=http://backend:20000
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=BOND_FRONT_SECRET
-    depends_on:
-      - backend
-    restart: always
-    networks:
-      - btrader-network
-
-networks:
-  btrader-network:
-    driver: bridge
-'''
+                // No need to create docker-compose.yml since we're using the one from frontend repo
             }
         }
         
@@ -86,7 +48,7 @@ networks:
                     sh "docker ps -q --filter 'name=btradebackend-run' | xargs -r docker rm -f || true"
                     sh "docker ps -q --filter 'name=btradefrontend-run' | xargs -r docker rm -f || true"
                     
-                    // Build and start containers
+                    // Build and start containers using the docker-compose.yml from frontend repo
                     sh "/usr/local/bin/docker-compose up -d --build"
                     echo "Deployment successful"
                 }
