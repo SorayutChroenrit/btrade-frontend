@@ -22,7 +22,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:20000
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:20000  # Use the service name
       - NEXTAUTH_URL=http://localhost:3000
       - NEXTAUTH_SECRET=BOND_FRONT_SECRET
     depends_on:
